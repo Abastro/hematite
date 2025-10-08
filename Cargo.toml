@@ -1,0 +1,9 @@
+[package]
+name = "hematite"
+version = "0.1.0"
+authors = ["Abastro <abab9579@gmail.com>"]
+license = "LGPL-3.0"
+description = "Homomorphic Encryption library for rust"
+edition = "2024"
+
+[dependencies]
