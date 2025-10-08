@@ -29,6 +29,8 @@ impl<H, T> Wrap<&H, T> {
     }
 }
 
+// TODO Maybe out-of-place pattern instead of self-replacing call?
+
 /**
  * Handle for additive groups.
  * Following rust conventions,
