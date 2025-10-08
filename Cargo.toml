@@ -7,3 +7,4 @@ description = "Homomorphic Encryption library for rust"
 edition = "2024"
 
 [dependencies]
+num-traits = "0.2.19"
