@@ -44,7 +44,7 @@ pub trait AddGroupHandle<G> {
     fn h_sub_assign(&self, lhs: &mut G, rhs: &G);
 }
 
-impl<G, Op: AddGroupHandle<G>> Add<&G> for Wrap<&Op, G> {
+impl<G, H: AddGroupHandle<G>> Add<&G> for Wrap<&H, G> {
     type Output = Self;
 
     fn add(self, rhs: &G) -> Self {
@@ -80,50 +80,53 @@ impl<G, Op: AddGroupHandle<G>> SubAssign<&G> for Wrap<&Op, &mut G> {
     }
 }
 
-pub trait OpRing<R>: AddGroupHandle<R> {
-    fn op_one(&self) -> R;
-    fn op_mul(&self, lhs: R, rhs: &R) -> R;
-    fn op_mul_assign(&self, lhs: &mut R, rhs: &R);
+/**
+ * Handle for ring operations.
+ * */
+pub trait RingHandle<R>: AddGroupHandle<R> {
+    fn h_one(&self) -> R;
+    fn h_mul(&self, lhs: R, rhs: &R) -> R;
+    fn h_mul_assign(&self, lhs: &mut R, rhs: &R);
 }
 
-impl<R, Op: OpRing<R>> Mul<&R> for Wrap<&Op, R> {
+impl<R, H: RingHandle<R>> Mul<&R> for Wrap<&H, R> {
     type Output = Self;
 
     fn mul(self, rhs: &R) -> Self {
         let Wrap { handle, value } = self;
         Wrap {
             handle,
-            value: handle.op_mul(value, rhs),
+            value: handle.h_mul(value, rhs),
         }
     }
 }
 
-impl<R, Op: OpRing<R>> MulAssign<&R> for Wrap<&Op, &mut R> {
+impl<R, H: RingHandle<R>> MulAssign<&R> for Wrap<&H, &mut R> {
     fn mul_assign(&mut self, rhs: &R) {
-        self.handle.op_mul_assign(self.value, rhs);
+        self.handle.h_mul_assign(self.value, rhs);
     }
 }
 
-pub trait OpField<F>: OpRing<F> {
-    fn op_div(&self, lhs: F, rhs: &F) -> F;
-    fn op_div_assign(&self, lhs: &mut F, rhs: &F);
+pub trait FieldHandle<F>: RingHandle<F> {
+    fn h_div(&self, lhs: F, rhs: &F) -> F;
+    fn h_div_assign(&self, lhs: &mut F, rhs: &F);
 }
 
-impl<F, Op: OpField<F>> Div<&F> for Wrap<&Op, F> {
+impl<F, H: FieldHandle<F>> Div<&F> for Wrap<&H, F> {
     type Output = Self;
 
     fn div(self, rhs: &F) -> Self {
         let Wrap { handle, value } = self;
         Wrap {
             handle,
-            value: handle.op_div(value, rhs),
+            value: handle.h_div(value, rhs),
         }
     }
 }
 
-impl<F, Op: OpField<F>> DivAssign<&F> for Wrap<&Op, &mut F> {
+impl<F, H: FieldHandle<F>> DivAssign<&F> for Wrap<&H, &mut F> {
     fn div_assign(&mut self, rhs: &F) {
-        self.handle.op_div_assign(self.value, rhs);
+        self.handle.h_div_assign(self.value, rhs);
     }
 }
 
