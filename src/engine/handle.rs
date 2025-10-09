@@ -29,77 +29,64 @@ impl<H, T> Wrap<&H, T> {
     }
 }
 
-// TODO Maybe out-of-place pattern instead of self-replacing call?
-
 /**
  * Handle for additive groups.
- * Following rust conventions,
- * operators with results have owning view,
- * and operators which modify have non-owning mutable view.
+ * Note the difference of in-place operations and out-of-place operations.
  * */
-pub trait AddGroupHandle<G> {
-    fn h_zero(&self) -> G;
+pub trait AddGroupHandle<G: ?Sized> {
+    fn h_set_zero(&self, val: &mut G);
     fn h_is_zero(&self, val: &G) -> bool;
-    fn h_add(&self, lhs: G, rhs: &G) -> G;
-    fn h_sub(&self, lhs: G, rhs: &G) -> G;
+    fn h_add(&self, lhs: &G, rhs: &G, out: &mut G);
+    fn h_sub(&self, lhs: &G, rhs: &G, out: &mut G);
     fn h_add_assign(&self, lhs: &mut G, rhs: &G);
     fn h_sub_assign(&self, lhs: &mut G, rhs: &G);
 }
 
-impl<G, H: AddGroupHandle<G>> Add<&G> for Wrap<&H, G> {
-    type Output = Self;
-
-    fn add(self, rhs: &G) -> Self {
-        let Wrap { handle, value } = self;
-        Wrap {
-            handle,
-            value: handle.h_add(value, rhs),
-        }
-    }
-}
-
-impl<G, Op: AddGroupHandle<G>> Sub<&G> for Wrap<&Op, G> {
-    type Output = Self;
-
-    fn sub(self, rhs: &G) -> Self {
-        let Wrap { handle, value } = self;
-        Wrap {
-            handle,
-            value: handle.h_sub(value, rhs),
-        }
-    }
-}
-
-impl<G, Op: AddGroupHandle<G>> AddAssign<&G> for Wrap<&Op, &mut G> {
+impl<G, H: AddGroupHandle<G>> AddAssign<&G> for Wrap<&H, &mut G> {
     fn add_assign(&mut self, rhs: &G) {
         self.handle.h_add_assign(self.value, rhs);
     }
 }
 
-impl<G, Op: AddGroupHandle<G>> SubAssign<&G> for Wrap<&Op, &mut G> {
+impl<G, H: AddGroupHandle<G>> SubAssign<&G> for Wrap<&H, &mut G> {
     fn sub_assign(&mut self, rhs: &G) {
         self.handle.h_sub_assign(self.value, rhs);
+    }
+}
+
+impl<G, H: AddGroupHandle<G>> Add<&G> for Wrap<&H, G> {
+    type Output = Self;
+
+    fn add(mut self, rhs: &G) -> Self {
+        self.handle.h_add_assign(&mut self.value, rhs);
+        self
+    }
+}
+
+impl<G, H: AddGroupHandle<G>> Sub<&G> for Wrap<&H, G> {
+    type Output = Self;
+
+    fn sub(mut self, rhs: &G) -> Self {
+        self.handle.h_sub_assign(&mut self.value, rhs);
+        self
     }
 }
 
 /**
  * Handle for ring operations.
  * */
-pub trait RingHandle<R>: AddGroupHandle<R> {
-    fn h_one(&self) -> R;
-    fn h_mul(&self, lhs: R, rhs: &R) -> R;
+pub trait RingHandle<R: ?Sized>: AddGroupHandle<R> {
+    fn h_set_one(&self, val: &mut R);
+    fn h_mul(&self, lhs: &R, rhs: &R, out: &mut R);
     fn h_mul_assign(&self, lhs: &mut R, rhs: &R);
 }
 
 impl<R, H: RingHandle<R>> Mul<&R> for Wrap<&H, R> {
     type Output = Self;
 
-    fn mul(self, rhs: &R) -> Self {
-        let Wrap { handle, value } = self;
-        Wrap {
-            handle,
-            value: handle.h_mul(value, rhs),
-        }
+    fn mul(mut self, rhs: &R) -> Self {
+        self.handle.h_mul_assign(&mut self.value, rhs);
+        self
     }
 }
 
@@ -109,20 +96,20 @@ impl<R, H: RingHandle<R>> MulAssign<&R> for Wrap<&H, &mut R> {
     }
 }
 
-pub trait FieldHandle<F>: RingHandle<F> {
-    fn h_div(&self, lhs: F, rhs: &F) -> F;
+/**
+ * Handler for ring operations.
+ * */
+pub trait FieldHandle<F: ?Sized>: RingHandle<F> {
+    fn h_div(&self, lhs: &F, rhs: &F, out: &mut F);
     fn h_div_assign(&self, lhs: &mut F, rhs: &F);
 }
 
 impl<F, H: FieldHandle<F>> Div<&F> for Wrap<&H, F> {
     type Output = Self;
 
-    fn div(self, rhs: &F) -> Self {
-        let Wrap { handle, value } = self;
-        Wrap {
-            handle,
-            value: handle.h_div(value, rhs),
-        }
+    fn div(mut self, rhs: &F) -> Self {
+        self.handle.h_div_assign(&mut self.value, rhs);
+        self
     }
 }
 

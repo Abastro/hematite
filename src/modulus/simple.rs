@@ -79,24 +79,24 @@ impl<R: NativeRing + Euclid> SimpleModulus<R> {
 }
 
 impl<R: NativeRing + Euclid> AddGroupHandle<R> for SimpleModulus<R> {
-    fn h_add(&self, lhs: R, rhs: &R) -> R {
-        self.representative(lhs + *rhs)
+    fn h_add(&self, lhs: &R, rhs: &R, out: &mut R) {
+        *out = self.representative(*lhs + *rhs);
     }
 
-    fn h_sub(&self, lhs: R, rhs: &R) -> R {
-        self.representative(lhs - *rhs)
+    fn h_sub(&self, lhs: &R, rhs: &R, out: &mut R) {
+        *out = self.representative(*lhs - *rhs);
     }
 
     fn h_add_assign(&self, lhs: &mut R, rhs: &R) {
-        *lhs = self.h_add(*lhs, rhs);
+        *lhs = self.representative(*lhs + *rhs);
     }
 
     fn h_sub_assign(&self, lhs: &mut R, rhs: &R) {
-        *lhs = self.h_sub(*lhs, rhs);
+        *lhs = self.representative(*lhs - *rhs);
     }
 
-    fn h_zero(&self) -> R {
-        zero()
+    fn h_set_zero(&self, val: &mut R) {
+        *val = zero();
     }
 
     fn h_is_zero(&self, val: &R) -> bool {
@@ -105,25 +105,25 @@ impl<R: NativeRing + Euclid> AddGroupHandle<R> for SimpleModulus<R> {
 }
 
 impl<R: NativeRing + Euclid> RingHandle<R> for SimpleModulus<R> {
-    fn h_mul(&self, lhs: R, rhs: &R) -> R {
-        self.representative(lhs * *rhs)
+    fn h_mul(&self, lhs: &R, rhs: &R, out: &mut R) {
+        *out = self.representative(*lhs * *rhs);
     }
 
     fn h_mul_assign(&self, lhs: &mut R, rhs: &R) {
-        *lhs = self.h_mul(*lhs, rhs);
+        *lhs = self.representative(*lhs * *rhs);
     }
 
-    fn h_one(&self) -> R {
-        one()
+    fn h_set_one(&self, val: &mut R) {
+        *val = one();
     }
 }
 
 impl<R: NativeRing + Euclid> FieldHandle<R> for SimpleModulus<R> {
-    fn h_div(&self, lhs: R, rhs: &R) -> R {
-        self.representative(lhs * self.invert(*rhs))
+    fn h_div(&self, lhs: &R, rhs: &R, out: &mut R) {
+        *out = self.representative(*lhs * self.invert(*rhs))
     }
 
     fn h_div_assign(&self, lhs: &mut R, rhs: &R) {
-        *lhs = self.h_div(*lhs, rhs);
+        *lhs = self.representative(*lhs * self.invert(*rhs))
     }
 }

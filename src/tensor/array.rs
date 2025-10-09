@@ -27,10 +27,29 @@ impl<R> NArray<R> {
         self.internal.len()
     }
 
+    // /**
+    //  * Fills the array with provided function.
+    //  * */
+    // pub fn fill<F>(&mut self, init: F)
+    // where
+    //     F: FnMut() -> R,
+    // {
+    //     self.internal.fill_with(init);
+    // }
+
     pub fn internal(&self) -> &Vec<R> {
         &self.internal
     }
 }
+
+// impl<R> IntoIterator for NArray<R> {
+//     type Item = R;
+//     type IntoIter = <Vec<R> as IntoIterator>::IntoIter;
+// 
+//     fn into_iter(self) -> Self::IntoIter {
+//         self.internal.into_iter()
+//     }
+// }
 
 impl<T, I> Index<I> for NArray<T>
 where
