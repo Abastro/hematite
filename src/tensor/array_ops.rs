@@ -1,11 +1,12 @@
 use std::ops::Range;
 
-use crate::engine::handle::AddGroupHandle;
+use crate::engine::handle::{AddGroupHandle, RingHandle};
 
 use super::array::NArray;
 
 /**
  * Array handle for fixed size arrays.
+ * The handle should be a reference.
  * */
 pub struct FixedArrayHandle<H> {
     handle_scalar: H,
@@ -17,8 +18,10 @@ pub struct FixedArrayHandle<H> {
  * */
 impl<A, H: AddGroupHandle<A>> AddGroupHandle<[A]> for FixedArrayHandle<&H> {
     fn h_set_zero(&self, val: &mut [A]) {
-        for entry in val {
-            self.handle_scalar.h_set_zero(entry);
+        debug_assert_eq!(self.length, val.len());
+
+        for idx in 0..self.length {
+            self.handle_scalar.h_set_zero(&mut val[idx]);
         }
     }
 
@@ -68,6 +71,39 @@ impl<A, H: AddGroupHandle<A>> AddGroupHandle<[A]> for FixedArrayHandle<&H> {
 }
 
 /**
+ * Ring implementation for slices.
+ * */
+impl<R, H: RingHandle<R>> RingHandle<[R]> for FixedArrayHandle<&H> {
+    fn h_set_one(&self, val: &mut [R]) {
+        debug_assert_eq!(self.length, val.len());
+
+        for idx in 0..self.length {
+            self.handle_scalar.h_set_one(&mut val[idx]);
+        }
+    }
+
+    fn h_mul(&self, lhs: &[R], rhs: &[R], out: &mut [R]) {
+        debug_assert_eq!(self.length, lhs.len());
+        debug_assert_eq!(self.length, rhs.len());
+        debug_assert_eq!(self.length, out.len());
+
+        for idx in 0..self.length {
+            self.handle_scalar
+                .h_mul(&lhs[idx], &rhs[idx], &mut out[idx]);
+        }
+    }
+
+    fn h_mul_assign(&self, lhs: &mut [R], rhs: &[R]) {
+        debug_assert_eq!(self.length, lhs.len());
+        debug_assert_eq!(self.length, rhs.len());
+
+        for idx in 0..self.length {
+            self.handle_scalar.h_mul_assign(&mut lhs[idx], &rhs[idx]);
+        }
+    }
+}
+
+/**
  * Product of additive groups is an additive group.
  * */
 impl<A, H: AddGroupHandle<A>> AddGroupHandle<NArray<A>> for FixedArrayHandle<&H> {
@@ -97,15 +133,35 @@ impl<A, H: AddGroupHandle<A>> AddGroupHandle<NArray<A>> for FixedArrayHandle<&H>
 }
 
 /**
+ * Product of rings is a ring.
+ * On the other hand, product of fields is not a field,
+ * so we do not include an implementation.
+ * */
+impl<R, H: RingHandle<R>> RingHandle<NArray<R>> for FixedArrayHandle<&H> {
+    fn h_set_one(&self, val: &mut NArray<R>) {
+        self.h_set_one(&mut val[..]);
+    }
+
+    fn h_mul(&self, lhs: &NArray<R>, rhs: &NArray<R>, out: &mut NArray<R>) {
+        self.h_mul(&lhs[..], &rhs[..], &mut out[..]);
+    }
+
+    fn h_mul_assign(&self, lhs: &mut NArray<R>, rhs: &NArray<R>) {
+        self.h_mul_assign(&mut lhs[..], &rhs[..]);
+    }
+}
+
+/**
  * Handle which partitions the vector into equal-sized chunks,
  * then handles each part.
+ * Each handle should be a reference.
  * */
 pub struct ChunksHandle<H> {
     chunk_handle: Vec<H>,
     chunk_length: usize,
 }
 
-impl<H> ChunksHandle<H> {
+impl<H> ChunksHandle<&H> {
     /**
      * Returns iterator of FixedArrayHandle with corresponding range to the chunk.
      * */
@@ -116,14 +172,14 @@ impl<H> ChunksHandle<H> {
         self.chunk_handle
             .iter()
             .map(|handle| FixedArrayHandle {
-                handle_scalar: handle,
+                handle_scalar: *handle,
                 length: self.chunk_length,
             })
             .zip(chunk_range)
     }
 }
 
-impl<A, H: AddGroupHandle<A>> AddGroupHandle<NArray<A>> for ChunksHandle<H> {
+impl<A, H: AddGroupHandle<A>> AddGroupHandle<NArray<A>> for ChunksHandle<&H> {
     fn h_set_zero(&self, val: &mut NArray<A>) {
         for (handle, range) in self.chunks_iter() {
             handle.h_set_zero(&mut val[range]);
@@ -156,6 +212,26 @@ impl<A, H: AddGroupHandle<A>> AddGroupHandle<NArray<A>> for ChunksHandle<H> {
     fn h_sub_assign(&self, lhs: &mut NArray<A>, rhs: &NArray<A>) {
         for (handle, range) in self.chunks_iter() {
             handle.h_sub_assign(&mut lhs[range.clone()], &rhs[range]);
+        }
+    }
+}
+
+impl<R, H: RingHandle<R>> RingHandle<NArray<R>> for ChunksHandle<&H> {
+    fn h_set_one(&self, val: &mut NArray<R>) {
+        for (handle, range) in self.chunks_iter() {
+            handle.h_set_one(&mut val[range]);
+        }
+    }
+
+    fn h_mul(&self, lhs: &NArray<R>, rhs: &NArray<R>, out: &mut NArray<R>) {
+        for (handle, range) in self.chunks_iter() {
+            handle.h_mul(&lhs[range.clone()], &rhs[range.clone()], &mut out[range]);
+        }
+    }
+
+    fn h_mul_assign(&self, lhs: &mut NArray<R>, rhs: &NArray<R>) {
+        for (handle, range) in self.chunks_iter() {
+            handle.h_mul_assign(&mut lhs[range.clone()], &rhs[range]);
         }
     }
 }
