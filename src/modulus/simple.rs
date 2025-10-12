@@ -1,6 +1,11 @@
+use std::{iter, result};
+
 use num_traits::{Euclid, one, zero};
 
-use crate::engine::{handle::{AddGroupHandle, FieldHandle, RingHandle}, native::NativeRing};
+use crate::engine::{
+    handle::{AddGroupHandle, FieldHandle, RingHandle},
+    native::NativeRing,
+};
 
 use super::modulus::Modulus;
 
@@ -63,6 +68,10 @@ impl<R: NativeRing + Euclid> ExtEuclid<R> {
 }
 
 impl<R: NativeRing + Euclid> SimpleModulus<R> {
+    pub fn modulus(&self) -> R {
+        self.modulus
+    }
+
     /**
      * Inverts a modular value - this requires the extended Euclidean algorithm.
      * */
@@ -125,5 +134,24 @@ impl<R: NativeRing + Euclid> FieldHandle<R> for SimpleModulus<R> {
 
     fn h_div_assign(&self, lhs: &mut R, rhs: &R) {
         *lhs = self.representative(*lhs * self.invert(*rhs))
+    }
+}
+
+impl<R: NativeRing + Euclid> SimpleModulus<R> {
+    /// Power-mod by exponent.
+    pub fn h_pow(&self, base: &R, exp: usize, out: &mut R) {
+        *out = one();
+        let mut cur_base = *base;
+        let mut e = exp;
+
+        while e != 0 {
+            if e & 1 == 1 {
+                self.h_mul_assign(out, &cur_base);
+            }
+
+            let cur_base_ = cur_base;
+            self.h_mul_assign(&mut cur_base, &cur_base_);
+            e >>= 1;
+        }
     }
 }
