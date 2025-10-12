@@ -3,6 +3,9 @@
 /// Underlying functionalities for implementations.
 pub mod engine;
 
+/// Mathematical basis, like finding primes.
+pub mod math;
+
 /// Modular operations.
 pub mod modulus;
 
