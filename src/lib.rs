@@ -14,3 +14,8 @@ pub mod tensor;
 
 /// Transformations like Number-Theoretic Transform or Discrete Fourier Transform.
 pub mod transform;
+
+pub mod core;
+
+/// Encryption schemes.
+pub mod encryption;

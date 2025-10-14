@@ -3,9 +3,8 @@ use std::{
     slice::SliceIndex,
 };
 
-/**
- * Array of numbers.
- * */
+/// Array of numbers.
+#[derive(Clone)]
 pub struct NArray<R> {
     internal: Vec<R>,
 }
@@ -27,6 +26,13 @@ impl<R> NArray<R> {
         self.internal.len()
     }
 
+    pub fn resize<F>(&mut self, new_len: usize, init: F)
+    where
+        F: FnMut() -> R,
+    {
+        self.internal.resize_with(new_len, init);
+    }
+
     // /**
     //  * Fills the array with provided function.
     //  * */
@@ -45,7 +51,7 @@ impl<R> NArray<R> {
 // impl<R> IntoIterator for NArray<R> {
 //     type Item = R;
 //     type IntoIter = <Vec<R> as IntoIterator>::IntoIter;
-// 
+//
 //     fn into_iter(self) -> Self::IntoIter {
 //         self.internal.into_iter()
 //     }

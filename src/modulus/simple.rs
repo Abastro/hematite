@@ -1,5 +1,3 @@
-use std::{iter, result};
-
 use num_traits::{Euclid, one, zero};
 
 use crate::engine::{
