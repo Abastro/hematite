@@ -55,6 +55,10 @@ pub struct Handle<Mod> {
 }
 
 impl<Mod> Handle<Mod> {
+    pub fn parameter(&self) -> &Parameter<Mod> {
+        &self.parameter
+    }
+
     fn chunk_handle(&self, metadata: Metadata) -> &ChunksHandle<Mod> {
         &self.chunk_handles[metadata.level]
     }
