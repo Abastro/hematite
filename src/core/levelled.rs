@@ -22,7 +22,8 @@ impl PartialEq for ModGroup {
 }
 
 /// Handle for levels, allowing for easier conversion between certain modulus.
-pub trait LevelHandle<Mod> {
+pub trait ModGroupHandle<Mod> {
+    /// The list of modulus factors of the current modulus group.
     fn get_modulus(&self) -> &Vec<Mod>;
 
     fn bottom_level(&self) -> ModGroup;
@@ -56,15 +57,15 @@ const LINEARS: [usize; MAX_MODULUS_COUNT] = {
 // TODO Auxiliary modulus for linear level handling
 
 /// Linear level handling with auxiliary modulus.
-pub struct LinearLevelHandle<Mod> {
+pub struct LinearModHandle<Mod> {
     modulus: Vec<Mod>,
     max_level: usize,
 }
 
-impl<Mod> LinearLevelHandle<Mod> {
-    pub fn new(modulus: Vec<Mod>, max_level: usize) -> LinearLevelHandle<Mod> {
+impl<Mod> LinearModHandle<Mod> {
+    pub fn new(modulus: Vec<Mod>, max_level: usize) -> LinearModHandle<Mod> {
         assert!(modulus.len() <= MAX_MODULUS_COUNT);
-        LinearLevelHandle { modulus, max_level }
+        LinearModHandle { modulus, max_level }
     }
 
     pub fn get_level(&self, level: usize) -> Option<ModGroup> {
@@ -81,7 +82,7 @@ impl<Mod> LinearLevelHandle<Mod> {
     }
 }
 
-impl<Mod> LevelHandle<Mod> for LinearLevelHandle<Mod> {
+impl<Mod> ModGroupHandle<Mod> for LinearModHandle<Mod> {
     fn get_modulus(&self) -> &Vec<Mod> {
         &self.modulus
     }
