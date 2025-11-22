@@ -72,9 +72,7 @@ impl<G, H: AddGroupHandle<G>> Sub<&G> for Wrap<&H, G> {
     }
 }
 
-/**
- * Handle for ring operations.
- * */
+/// Handle for ring operations.
 pub trait RingHandle<R: ?Sized>: AddGroupHandle<R> {
     fn h_set_one(&self, val: &mut R);
     fn h_mul(&self, lhs: &R, rhs: &R, out: &mut R);
