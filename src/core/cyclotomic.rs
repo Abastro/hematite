@@ -59,7 +59,7 @@ impl<Mod> Handle<Mod> {
         &self.parameter
     }
 
-    fn chunk_handle(&self, metadata: Metadata) -> &ChunksHandle<Mod> {
+    fn chunk_handle(&self, metadata: CycloMeta) -> &ChunksHandle<Mod> {
         &self.chunk_handles[metadata.level]
     }
 }
