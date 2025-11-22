@@ -6,7 +6,7 @@ use crate::{
 
 /// Metadata for the ring elements.
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub struct Metadata {
+pub struct CycloMeta {
     length: usize,
     level: usize,
 }
@@ -14,22 +14,22 @@ pub struct Metadata {
 /// Denotes the cyclotomic elements.
 #[derive(Clone)]
 pub struct Cyclo<const NTT: bool> {
-    metadata: Metadata,
+    metadata: CycloMeta,
     constituents: NArray<u64>,
 }
 
 impl<const NTT: bool> Cyclo<{ NTT }> {
-    pub fn get_metadata(&self) -> Metadata {
+    pub fn get_metadata(&self) -> CycloMeta {
         self.metadata
     }
 
     /// Set metadata of the ring element without changing the internal data.
     /// The length should be the same for the operation to make sense.
-    pub fn set_metadata(&mut self, new_meta: Metadata) {
+    pub fn set_metadata(&mut self, new_meta: CycloMeta) {
         assert_eq!(self.metadata.length, new_meta.length);
 
         if self.metadata.level != new_meta.level {
-            self.constituents.resize(new_meta.level + 1, || 0);
+            self.constituents.resize((new_meta.level + 1) * new_meta.length, || 0);
         }
 
         self.metadata = new_meta;
@@ -55,7 +55,7 @@ pub struct Handle<Mod> {
 }
 
 impl<Mod> Handle<Mod> {
-    fn chunk_handle(&self, metadata: Metadata) -> &ChunksHandle<Mod> {
+    fn chunk_handle(&self, metadata: CycloMeta) -> &ChunksHandle<Mod> {
         &self.chunk_handles[metadata.level]
     }
 }
