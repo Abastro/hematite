@@ -1,8 +1,17 @@
+use std::{
+    cmp::Ordering,
+    collections::{BTreeSet, HashSet},
+};
+
 pub const MAX_MODULUS_COUNT: usize = 64;
 
 /// Denotes a level as group of basis modulus.
 /// RNS decomposition is used to represent large modulus,
-/// where the modulus is split into "basis" moduli.
+/// where the large modulus is a product of basis modulus.
+///
+/// The list of modulus should be in ascending order with no duplicates.
+/// The ordering of level is given by inclusion relation,
+/// which corresponds to divisibility relation of modulus.
 #[derive(Clone, Copy)]
 pub struct Level {
     modulus_count: usize,
@@ -10,15 +19,33 @@ pub struct Level {
 }
 
 impl Level {
-    /// Modulus
-    fn used_modulus(&self) -> &[usize] {
+    /// Basis modulus indices for the level.
+    fn modulus_basis(&self) -> &[usize] {
         &self.used_modulus[..self.modulus_count]
     }
 }
 
 impl PartialEq for Level {
     fn eq(&self, other: &Self) -> bool {
-        self.used_modulus() == other.used_modulus()
+        self.modulus_basis() == other.modulus_basis()
+    }
+}
+
+impl PartialOrd for Level {
+    /// Slower implementation, but does the job for now
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let set_a: BTreeSet<usize> = self.modulus_basis().iter().copied().collect();
+        let set_b: BTreeSet<usize> = other.modulus_basis().iter().copied().collect();
+
+        if set_a == set_b {
+            Some(Ordering::Equal)
+        } else if set_a.is_subset(&set_b) {
+            Some(Ordering::Less)
+        } else if set_b.is_subset(&set_a) {
+            Some(Ordering::Greater)
+        } else {
+            None
+        }
     }
 }
 
