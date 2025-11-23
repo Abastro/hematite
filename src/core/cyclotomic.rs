@@ -1,7 +1,5 @@
 use crate::{
-    engine::handle::{AddGroupHandle, RingHandle},
-    tensor::{array::NArray, array_ops::ChunksHandle},
-    transform::number_theoretic::NTT,
+    encryption::rlwe::Metadata, engine::handle::{AddGroupHandle, RingHandle}, tensor::{array::NArray, array_ops::ChunksHandle}, the, transform::number_theoretic::NTT
 };
 
 use super::levelled::Level;
@@ -77,6 +75,7 @@ impl<Mod> CycloHandle<&Mod> {
     }
 }
 
+/// Additive handle for cyclotomic rings.
 impl<Mod: AddGroupHandle<u64>, const NTT: bool> AddGroupHandle<Cyclo<{ NTT }>>
     for CycloHandle<&Mod>
 {
@@ -90,9 +89,7 @@ impl<Mod: AddGroupHandle<u64>, const NTT: bool> AddGroupHandle<Cyclo<{ NTT }>>
     }
 
     fn h_add(&self, lhs: &Cyclo<{ NTT }>, rhs: &Cyclo<{ NTT }>, out: &mut Cyclo<{ NTT }>) {
-        // TODO Match level
-        let metadata = lhs.metadata;
-        out.metadata = metadata;
+        let metadata = the!(lhs.metadata, rhs.metadata, out.metadata);
 
         self.chunk_handle(metadata).h_add(
             &lhs.constituents,
@@ -102,9 +99,7 @@ impl<Mod: AddGroupHandle<u64>, const NTT: bool> AddGroupHandle<Cyclo<{ NTT }>>
     }
 
     fn h_sub(&self, lhs: &Cyclo<{ NTT }>, rhs: &Cyclo<{ NTT }>, out: &mut Cyclo<{ NTT }>) {
-        // TODO Match level
-        let metadata = lhs.metadata;
-        out.metadata = metadata;
+        let metadata = the!(lhs.metadata, rhs.metadata, out.metadata);
 
         self.chunk_handle(metadata).h_sub(
             &lhs.constituents,
@@ -114,14 +109,16 @@ impl<Mod: AddGroupHandle<u64>, const NTT: bool> AddGroupHandle<Cyclo<{ NTT }>>
     }
 
     fn h_add_assign(&self, lhs: &mut Cyclo<{ NTT }>, rhs: &Cyclo<{ NTT }>) {
-        // TODO Match level
-        self.chunk_handle(lhs.metadata)
+        let metadata = the!(lhs.metadata, rhs.metadata);
+
+        self.chunk_handle(metadata)
             .h_add_assign(&mut lhs.constituents, &rhs.constituents);
     }
 
     fn h_sub_assign(&self, lhs: &mut Cyclo<{ NTT }>, rhs: &Cyclo<{ NTT }>) {
-        // TODO Match level
-        self.chunk_handle(lhs.metadata)
+        let metadata = the!(lhs.metadata, rhs.metadata);
+
+        self.chunk_handle(metadata)
             .h_sub_assign(&mut lhs.constituents, &rhs.constituents);
     }
 }
@@ -130,12 +127,14 @@ impl<Mod: AddGroupHandle<u64>, const NTT: bool> AddGroupHandle<Cyclo<{ NTT }>>
 /// NTT is required for efficient product.
 impl<Mod: RingHandle<u64>> RingHandle<Cyclo<true>> for CycloHandle<&Mod> {
     fn h_set_one(&self, val: &mut Cyclo<true>) {
-        todo!()
+        self.chunk_handle(val.metadata)
+            .h_set_one(&mut val.constituents);
     }
 
     fn h_mul(&self, lhs: &Cyclo<true>, rhs: &Cyclo<true>, out: &mut Cyclo<true>) {
-        // TODO Match level
-        self.chunk_handle(lhs.metadata).h_mul(
+        let metadata = the!(lhs.metadata, rhs.metadata, out.metadata);
+
+        self.chunk_handle(metadata).h_mul(
             &lhs.constituents,
             &rhs.constituents,
             &mut out.constituents,
@@ -143,8 +142,9 @@ impl<Mod: RingHandle<u64>> RingHandle<Cyclo<true>> for CycloHandle<&Mod> {
     }
 
     fn h_mul_assign(&self, lhs: &mut Cyclo<true>, rhs: &Cyclo<true>) {
-        // TODO Match level
-        self.chunk_handle(lhs.metadata)
+        let metadata = the!(lhs.metadata, rhs.metadata);
+
+        self.chunk_handle(metadata)
             .h_mul_assign(&mut lhs.constituents, &rhs.constituents);
     }
 }

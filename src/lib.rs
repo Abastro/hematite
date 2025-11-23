@@ -1,5 +1,8 @@
 //! Homomorphic encryption library written in rust.
 
+/// Utilities.
+pub mod utils;
+
 /// Underlying functionalities for implementations.
 pub mod engine;
 
