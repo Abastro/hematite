@@ -161,6 +161,13 @@ pub struct ChunksHandle<H> {
     chunk_length: usize,
 }
 
+impl<H> ChunksHandle<H> {
+    /// Create a new handle for chunks.
+    pub fn new(chunk_handle: Vec<H>, chunk_length: usize) -> Self {
+        ChunksHandle { chunk_handle, chunk_length }
+    }
+}
+
 impl<H> ChunksHandle<&H> {
     /**
      * Returns iterator of FixedArrayHandle with corresponding range to the chunk.

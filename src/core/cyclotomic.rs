@@ -4,14 +4,19 @@ use crate::{
     transform::number_theoretic::NTT,
 };
 
+use super::levelled::Level;
+
 /// Metadata for the ring elements.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct CycloMeta {
     length: usize,
-    level: usize,
+    level: Level,
 }
 
 /// Denotes the cyclotomic elements.
+///
+/// The constituents are in 2-dimensional format,
+/// where elements for each modulus are grouped together.
 #[derive(Clone)]
 pub struct Cyclo<const NTT: bool> {
     metadata: CycloMeta,
@@ -23,17 +28,17 @@ impl<const NTT: bool> Cyclo<{ NTT }> {
         self.metadata
     }
 
-    /// Set metadata of the ring element without changing the internal data.
-    /// The length should be the same for the operation to make sense.
-    pub fn set_metadata(&mut self, new_meta: CycloMeta) {
-        assert_eq!(self.metadata.length, new_meta.length);
+    // /// Set metadata of the ring element without changing the internal data.
+    // /// The length should be the same for the operation to make sense.
+    // pub fn set_metadata(&mut self, new_meta: CycloMeta) {
+    //     assert_eq!(self.metadata.length, new_meta.length);
 
-        if self.metadata.level != new_meta.level {
-            self.constituents.resize((new_meta.level + 1) * new_meta.length, || 0);
-        }
+    //     if self.metadata.level != new_meta.level {
+    //         self.constituents.resize((new_meta.level + 1) * new_meta.length, || 0);
+    //     }
 
-        self.metadata = new_meta;
-    }
+    //     self.metadata = new_meta;
+    // }
 }
 
 /// Parameter for the modular cyclotomic rings.
@@ -42,29 +47,39 @@ pub struct Parameter<Mod> {
     length: usize,
     /// Order of the roots of unity in the cyclotomic ring.
     order: usize,
-    /// Chain of modulus.
+    /// The modulus basis.
     modulus: Vec<Mod>,
 }
 
 /// Handle for the modular cyclotomic rings.
-pub struct Handle<Mod> {
+/// 
+/// At this level, the metadata should be the same for operations.
+pub struct CycloHandle<Mod> {
     parameter: Parameter<Mod>,
-    /// Chunk handles for each level
-    chunk_handles: Vec<ChunksHandle<Mod>>,
     ntt: Vec<NTT<Mod, u64>>,
 }
 
-impl<Mod> Handle<Mod> {
-    pub fn parameter(&self) -> &Parameter<Mod> {
+impl<Mod> CycloHandle<&Mod> {
+    pub fn parameter(&self) -> &Parameter<&Mod> {
         &self.parameter
     }
 
-    fn chunk_handle(&self, metadata: CycloMeta) -> &ChunksHandle<Mod> {
-        &self.chunk_handles[metadata.level]
+    /// Obtaining the chunk handle is not optimized for now
+    fn chunk_handle(&self, metadata: CycloMeta) -> ChunksHandle<&Mod> {
+        let param = &self.parameter;
+        let level = metadata.level;
+        let handles: Vec<_> = level
+            .modulus_basis()
+            .iter()
+            .map(|idx| param.modulus[*idx])
+            .collect();
+        ChunksHandle::new(handles, param.length)
     }
 }
 
-impl<Mod: AddGroupHandle<u64>, const NTT: bool> AddGroupHandle<Cyclo<{ NTT }>> for Handle<&Mod> {
+impl<Mod: AddGroupHandle<u64>, const NTT: bool> AddGroupHandle<Cyclo<{ NTT }>>
+    for CycloHandle<&Mod>
+{
     fn h_set_zero(&self, val: &mut Cyclo<{ NTT }>) {
         self.chunk_handle(val.metadata)
             .h_set_zero(&mut val.constituents);
@@ -76,8 +91,6 @@ impl<Mod: AddGroupHandle<u64>, const NTT: bool> AddGroupHandle<Cyclo<{ NTT }>> f
 
     fn h_add(&self, lhs: &Cyclo<{ NTT }>, rhs: &Cyclo<{ NTT }>, out: &mut Cyclo<{ NTT }>) {
         // TODO Match level
-        // Seems like simply matching level does not make sense without context.
-        // Need to think about how to handle this.
         let metadata = lhs.metadata;
         out.metadata = metadata;
 
@@ -115,7 +128,7 @@ impl<Mod: AddGroupHandle<u64>, const NTT: bool> AddGroupHandle<Cyclo<{ NTT }>> f
 
 /// Ring handle for modular cyclotomic rings.
 /// NTT is required for efficient product.
-impl<Mod: RingHandle<u64>> RingHandle<Cyclo<true>> for Handle<&Mod> {
+impl<Mod: RingHandle<u64>> RingHandle<Cyclo<true>> for CycloHandle<&Mod> {
     fn h_set_one(&self, val: &mut Cyclo<true>) {
         todo!()
     }

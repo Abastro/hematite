@@ -1,7 +1,4 @@
-use std::{
-    cmp::Ordering,
-    collections::{BTreeSet, HashSet},
-};
+use std::{cmp::Ordering, collections::BTreeSet};
 
 pub const MAX_MODULUS_COUNT: usize = 64;
 
@@ -12,7 +9,7 @@ pub const MAX_MODULUS_COUNT: usize = 64;
 /// The list of modulus should be in ascending order with no duplicates.
 /// The ordering of level is given by inclusion relation,
 /// which corresponds to divisibility relation of modulus.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Level {
     modulus_count: usize,
     used_modulus: [usize; MAX_MODULUS_COUNT],
@@ -20,7 +17,7 @@ pub struct Level {
 
 impl Level {
     /// Basis modulus indices for the level.
-    fn modulus_basis(&self) -> &[usize] {
+    pub fn modulus_basis(&self) -> &[usize] {
         &self.used_modulus[..self.modulus_count]
     }
 }
@@ -30,6 +27,8 @@ impl PartialEq for Level {
         self.modulus_basis() == other.modulus_basis()
     }
 }
+
+impl Eq for Level {}
 
 impl PartialOrd for Level {
     /// Slower implementation, but does the job for now
@@ -48,6 +47,8 @@ impl PartialOrd for Level {
         }
     }
 }
+
+// TODO Is LevelHandle needed?
 
 /// Handle for levels, allowing for easier conversion between certain modulus.
 pub trait LevelHandle<Mod> {
@@ -94,6 +95,7 @@ impl<Mod> LinearLevelHandle<Mod> {
         LinearLevelHandle { modulus, max_level }
     }
 
+    /// Level at the size
     pub fn get_level(&self, level: usize) -> Option<Level> {
         (level <= self.max_level).then(|| Level {
             modulus_count: level + 1,
