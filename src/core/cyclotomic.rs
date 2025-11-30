@@ -1,5 +1,8 @@
 use crate::{
-    encryption::rlwe::Metadata, engine::handle::{AddGroupHandle, RingHandle}, tensor::{array::NArray, array_ops::ChunksHandle}, the, transform::number_theoretic::NTT
+    engine::handle::{AddGroupHandle, RingHandle},
+    tensor::{array::NArray, array_ops::ChunksHandle},
+    the,
+    transform::number_theoretic::NTT,
 };
 
 use super::levelled::Level;
@@ -25,18 +28,6 @@ impl<const NTT: bool> Cyclo<{ NTT }> {
     pub fn get_metadata(&self) -> CycloMeta {
         self.metadata
     }
-
-    // /// Set metadata of the ring element without changing the internal data.
-    // /// The length should be the same for the operation to make sense.
-    // pub fn set_metadata(&mut self, new_meta: CycloMeta) {
-    //     assert_eq!(self.metadata.length, new_meta.length);
-
-    //     if self.metadata.level != new_meta.level {
-    //         self.constituents.resize((new_meta.level + 1) * new_meta.length, || 0);
-    //     }
-
-    //     self.metadata = new_meta;
-    // }
 }
 
 /// Parameter for the modular cyclotomic rings.
@@ -50,8 +41,8 @@ pub struct Parameter<Mod> {
 }
 
 /// Handle for the modular cyclotomic rings.
-/// 
-/// At this level, the metadata should be the same for operations.
+///
+/// At this level, the metadata should be the same between operands for arithmetic operations.
 pub struct CycloHandle<Mod> {
     parameter: Parameter<Mod>,
     ntt: Vec<NTT<Mod, u64>>,
