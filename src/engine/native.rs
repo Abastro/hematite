@@ -2,9 +2,7 @@ use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
 
 use num_traits::{One, Zero};
 
-/**
- * Native/cheap ring types.
- */
+/// Natively implemented ring types.
 pub trait NativeRing:
     Copy
     + Eq

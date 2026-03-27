@@ -9,7 +9,7 @@ pub mod engine;
 /// Mathematical basis, like finding primes.
 pub mod math;
 
-/// Modular operations.
+/// Modular arithmetic.
 pub mod modulus;
 
 /// Arrays and tensors, with operations on them.

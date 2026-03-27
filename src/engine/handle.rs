@@ -1,11 +1,10 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
-/**
- * Wrapper to support runtime-specific operations.
- * This lets us call operations
- * without carrying around the operation-specific data in all instances.
- * The handle should always be passed as a reference.
- * */
+/// Wrapper to support runtime-specific operations.
+/// 
+/// This lets us call operations without carrying around the operation-specific data in all instances.
+/// 
+/// The handle should always be passed as a reference.
 #[derive(Debug, Clone, Copy)]
 pub struct Wrap<H, T> {
     handle: H,
@@ -29,10 +28,8 @@ impl<H, T> Wrap<&H, T> {
     }
 }
 
-/**
- * Handle for additive groups.
- * Note the difference of in-place operations and out-of-place operations.
- * */
+/// Handle for additive groups.
+/// Note the difference of in-place operations and out-of-place operations.
 pub trait AddGroupHandle<G: ?Sized> {
     fn h_set_zero(&self, val: &mut G);
     fn h_is_zero(&self, val: &G) -> bool;
@@ -94,9 +91,7 @@ impl<R, H: RingHandle<R>> MulAssign<&R> for Wrap<&H, &mut R> {
     }
 }
 
-/**
- * Handler for ring operations.
- * */
+/// Handle for field operations.
 pub trait FieldHandle<F: ?Sized>: RingHandle<F> {
     fn h_div(&self, lhs: &F, rhs: &F, out: &mut F);
     fn h_div_assign(&self, lhs: &mut F, rhs: &F);
@@ -117,9 +112,6 @@ impl<F, H: FieldHandle<F>> DivAssign<&F> for Wrap<&H, &mut F> {
     }
 }
 
-// /**
-//  * Trivial operator which inherits native operation.
-//  * */
 // #[derive(Debug, Clone, Copy)]
 // pub struct TrivialOp<R>(PhantomData<R>);
 //
