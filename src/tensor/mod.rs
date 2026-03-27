@@ -1,2 +1,2 @@
-pub mod array;
-pub mod array_ops;
+/// Tensor with specified shape.
+pub mod tensor;

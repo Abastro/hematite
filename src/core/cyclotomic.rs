@@ -1,6 +1,5 @@
 use crate::{
     engine::handle::{AddGroupHandle, RingHandle},
-    tensor::{array::NArray, array_ops::ChunksHandle},
     the,
     transform::number_theoretic::NTT,
 };
