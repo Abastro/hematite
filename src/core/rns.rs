@@ -75,3 +75,26 @@ impl TensorShape for RNSModulus {
         self.modulus_count
     }
 }
+
+/// Shape of vector of RNS modulus.
+///
+/// For compatibility with e.g. RNSCyclo,
+/// the coord order is level * length.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct RNSVector {
+    pub modulus: RNSModulus,
+    pub length: usize,
+}
+
+impl TensorShape for RNSVector {
+    type Coord = (usize, usize);
+
+    fn coord_index(&self, coord: Self::Coord) -> usize {
+        let (level, idx) = coord;
+        level * self.length + idx
+    }
+
+    fn total_size(&self) -> usize {
+        self.modulus.total_size() * self.length
+    }
+}

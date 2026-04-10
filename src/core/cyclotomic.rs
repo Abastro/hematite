@@ -1,4 +1,4 @@
-use crate::tensor::tensor::TensorShape;
+use crate::{core::rns::RNSModulus, tensor::tensor::TensorShape};
 
 /// Shape for cyclotomic rings.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -17,5 +17,27 @@ impl TensorShape for Cyclo {
 
     fn total_size(&self) -> usize {
         self.degree
+    }
+}
+
+/// Denotes cyclotomic ring over RNS modulus.
+/// 
+/// Coord order is level * degree.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct RNSCyclo {
+    pub modulus: RNSModulus,
+    pub variable: Cyclo,
+}
+
+impl TensorShape for RNSCyclo {
+    type Coord = (usize, usize);
+
+    fn coord_index(&self, coord: Self::Coord) -> usize {
+        let (level, deg) = coord;
+        level * self.variable.total_size() + deg
+    }
+
+    fn total_size(&self) -> usize {
+        self.modulus.total_size() * self.variable.total_size()
     }
 }
