@@ -1,5 +1,5 @@
-/// Chain of modulus as levelled construction
-pub mod levelled;
+/// Residue-number system
+pub mod rns;
 
-/// Filtration of modular cyclotomic rings
+/// Cyclotomic ring structure
 pub mod cyclotomic;
