@@ -5,6 +5,7 @@ use std::{
 
 use crate::engine::handle::{AddGroupHandle, RingHandle};
 
+/// A lightweight representation of the shape of a tensor.
 pub trait TensorShape: Copy {
     type Coord: Copy;
 

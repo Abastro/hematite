@@ -9,9 +9,13 @@ pub mod engine;
 /// Mathematical basis, like finding primes.
 pub mod math;
 
+/// (Big) Integer arithmetic.
+pub mod integer;
+
 /// Modular arithmetic.
 pub mod modulus;
 
+/// Real and Complex arithmetic.
 pub mod real_cx;
 
 /// Arrays and tensors, with operations on them.
