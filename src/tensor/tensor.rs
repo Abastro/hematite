@@ -26,8 +26,12 @@ impl<Shape: TensorShape, T> Tensor<Shape, T> {
         self.shape
     }
 
+    pub fn data(&self) -> &Vec<T> {
+        &self.data
+    }
+
     /// Internal data of the tensor.
-    pub fn data(&mut self) -> &mut Vec<T> {
+    pub fn data_mut(&mut self) -> &mut Vec<T> {
         &mut self.data
     }
 
@@ -38,6 +42,24 @@ impl<Shape: TensorShape, T> Tensor<Shape, T> {
         let mut data = Vec::with_capacity(shape.total_size());
         data.resize_with(shape.total_size(), init);
         Tensor { shape, data }
+    }
+
+    pub fn iter(&self) -> std::slice::Iter<'_, T> {
+        self.data.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, T> {
+        self.data.iter_mut()
+    }
+}
+
+impl<Shape: TensorShape, T> IntoIterator for Tensor<Shape, T> {
+    type Item = T;
+
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.data.into_iter()
     }
 }
 
@@ -60,8 +82,10 @@ pub struct PointwiseHandle<H> {
     handle_scalar: H,
 }
 
-impl<Shape: TensorShape + Eq + Debug, T, H: AddGroupHandle<T>> AddGroupHandle<Tensor<Shape, T>>
-    for PointwiseHandle<&H>
+impl<Shape, T, H> AddGroupHandle<Tensor<Shape, T>> for PointwiseHandle<&H>
+where
+    Shape: TensorShape + Eq + Debug,
+    H: AddGroupHandle<T>,
 {
     fn h_set_zero(&self, val: &mut Tensor<Shape, T>) {
         for entry in val.data.iter_mut() {
@@ -114,8 +138,10 @@ impl<Shape: TensorShape + Eq + Debug, T, H: AddGroupHandle<T>> AddGroupHandle<Te
     }
 }
 
-impl<Shape: TensorShape + Eq + Debug, T, H: RingHandle<T>> RingHandle<Tensor<Shape, T>>
-    for PointwiseHandle<&H>
+impl<Shape, T, H> RingHandle<Tensor<Shape, T>> for PointwiseHandle<&H>
+where
+    Shape: TensorShape + Eq + Debug,
+    H: RingHandle<T>,
 {
     fn h_set_one(&self, val: &mut Tensor<Shape, T>) {
         for entry in val.data.iter_mut() {
