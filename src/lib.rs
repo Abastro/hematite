@@ -12,6 +12,8 @@ pub mod math;
 /// Modular arithmetic.
 pub mod modulus;
 
+pub mod real_cx;
+
 /// Arrays and tensors, with operations on them.
 pub mod tensor;
 
