@@ -1,10 +1,5 @@
-/**
- * Modulus denotes the submodule or ideal I of R
- * which is used to construct R/I.
- */
-pub trait Modulus<R> {
-    /**
-     * Representative of the value as element in R/I.
-    * */
-    fn representative(&self, value: R) -> R;
+/// Container for modular arithmetic.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Mod64 {
+    pub representative: u64,
 }

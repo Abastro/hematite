@@ -1,6 +1,6 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
-/// Wrapper to support runtime-specific operations.
+/// Wrapper to support runtime-specific operations, for e.g. modular arithmetic.
 /// 
 /// This lets us call operations without carrying around the operation-specific data in all instances.
 /// 
@@ -111,56 +111,3 @@ impl<F, H: FieldHandle<F>> DivAssign<&F> for Wrap<&H, &mut F> {
         self.handle.h_div_assign(self.value, rhs);
     }
 }
-
-// #[derive(Debug, Clone, Copy)]
-// pub struct TrivialOp<R>(PhantomData<R>);
-//
-// impl<R: NativeRing> OpAddGroup<R> for TrivialOp<R> {
-//     fn op_zero(&self) -> R {
-//         zero()
-//     }
-//
-//     fn is_zero(&self, val: &R) -> bool {
-//         val.is_zero()
-//     }
-//
-//     fn op_add(&self, lhs: R, rhs: &R) -> R {
-//         lhs + *rhs
-//     }
-//
-//     fn op_sub(&self, lhs: R, rhs: &R) -> R {
-//         lhs - *rhs
-//     }
-//
-//     fn op_add_assign(&self, lhs: &mut R, rhs: &R) {
-//         *lhs += *rhs;
-//     }
-//
-//     fn op_sub_assign(&self, lhs: &mut R, rhs: &R) {
-//         *lhs -= *rhs;
-//     }
-// }
-//
-// impl<R: NativeRing> OpRing<R> for TrivialOp<R> {
-//     fn op_one(&self) -> R {
-//         one()
-//     }
-//
-//     fn op_mul(&self, lhs: R, rhs: &R) -> R {
-//         lhs * *rhs
-//     }
-//
-//     fn op_mul_assign(&self, lhs: &mut R, rhs: &R) {
-//         *lhs *= *rhs
-//     }
-// }
-//
-// impl<R: NativeRing + Div<Output = R> + DivAssign> OpField<R> for TrivialOp<R> {
-//     fn op_div(&self, lhs: R, rhs: &R) -> R {
-//         lhs / *rhs
-//     }
-//
-//     fn op_div_assign(&self, lhs: &mut R, rhs: &R) {
-//         *lhs /= *rhs
-//     }
-// }

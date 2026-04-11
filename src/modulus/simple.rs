@@ -1,57 +1,130 @@
-use num_traits::{Euclid, one, zero};
+use num_traits::Euclid;
 
-use crate::engine::{
-    handle::{AddGroupHandle, FieldHandle, RingHandle},
-    native::NativeRing,
+use crate::{
+    engine::handle::{AddGroupHandle, FieldHandle, RingHandle},
+    modulus::modulus::Mod64,
 };
 
-use super::modulus::Modulus;
-
-/**
- * Denotes simple modulus on a euclidean ring.
- * The representative is chosen as the unique remainder.
- * */
+/// Denotes modular arithmetic with straightforward reduction.
+/// The representative is chosen as the unique remainder.
+///
+/// Can overflow for modulus over 32 bit.
 #[derive(Debug, PartialEq, Eq)]
-pub struct SimpleModulus<R> {
-    modulus: R,
+pub struct ModulusSimple {
+    pub modulus: u64,
 }
 
-impl<R: Euclid> Modulus<R> for SimpleModulus<R> {
-    fn representative(&self, value: R) -> R {
-        value.rem_euclid(&self.modulus)
+impl ModulusSimple {
+    pub fn into(&self, val: u64) -> Mod64 {
+        Mod64 {
+            representative: val % self.modulus,
+        }
+    }
+
+    pub fn h_pow(&self, base: Mod64, exp: usize) -> Mod64 {
+        let mut out = Mod64 { representative: 1 };
+        let mut cur_base = base;
+        let mut e = exp;
+
+        while e != 0 {
+            if e & 1 == 1 {
+                self.h_mul_assign(&mut out, &cur_base);
+            }
+
+            let cur_base_ = cur_base;
+            self.h_mul_assign(&mut cur_base, &cur_base_);
+            e >>= 1;
+        }
+
+        out
+    }
+
+    pub fn invert(&self, value: Mod64) -> Mod64 {
+        let gcd_res = ExtEuclid::compute(self.modulus, value.representative);
+        assert!(gcd_res.gcd == 1);
+        Mod64 {
+            representative: gcd_res.coeff_right,
+        }
     }
 }
 
-/**
- * Result of the Extended Euclidean algorithm,
- * which computes the gcd and coefficients satisfying
- * left * coeff_left + right * coeff_right = gcd.
- */
-#[derive(Clone, Copy)]
-pub struct ExtEuclid<R> {
-    pub gcd: R,
-    pub coeff_left: R,
-    pub coeff_right: R,
+impl AddGroupHandle<Mod64> for ModulusSimple {
+    fn h_set_zero(&self, val: &mut Mod64) {
+        val.representative = 0
+    }
+
+    fn h_is_zero(&self, val: &Mod64) -> bool {
+        val.representative == 0
+    }
+
+    fn h_add(&self, lhs: &Mod64, rhs: &Mod64, out: &mut Mod64) {
+        out.representative = (lhs.representative + rhs.representative) % self.modulus
+    }
+
+    fn h_sub(&self, lhs: &Mod64, rhs: &Mod64, out: &mut Mod64) {
+        out.representative = (lhs.representative + self.modulus - rhs.representative) % self.modulus
+    }
+
+    fn h_add_assign(&self, lhs: &mut Mod64, rhs: &Mod64) {
+        lhs.representative = (lhs.representative + rhs.representative) % self.modulus
+    }
+
+    fn h_sub_assign(&self, lhs: &mut Mod64, rhs: &Mod64) {
+        lhs.representative = (lhs.representative + self.modulus - rhs.representative) % self.modulus
+    }
 }
 
-impl<R: NativeRing + Euclid> ExtEuclid<R> {
-    /**
-     * Computes Extended Euclidean Algorithm.
-     */
-    pub fn compute(left: R, right: R) -> ExtEuclid<R> {
+impl RingHandle<Mod64> for ModulusSimple {
+    fn h_set_one(&self, val: &mut Mod64) {
+        val.representative = 1
+    }
+
+    fn h_mul(&self, lhs: &Mod64, rhs: &Mod64, out: &mut Mod64) {
+        out.representative = (lhs.representative * rhs.representative) % self.modulus
+    }
+
+    fn h_mul_assign(&self, lhs: &mut Mod64, rhs: &Mod64) {
+        lhs.representative = (lhs.representative * rhs.representative) % self.modulus
+    }
+}
+
+impl FieldHandle<Mod64> for ModulusSimple {
+    fn h_div(&self, lhs: &Mod64, rhs: &Mod64, out: &mut Mod64) {
+        self.h_mul(lhs, &self.invert(*rhs), out);
+    }
+
+    fn h_div_assign(&self, lhs: &mut Mod64, rhs: &Mod64) {
+        self.h_mul_assign(lhs, &self.invert(*rhs));
+    }
+}
+
+/// Result of the Extended Euclidean algorithm,
+/// which computes the gcd and coefficients satisfying:
+///
+/// left * coeff_left + right * coeff_right = gcd.
+#[derive(Clone, Copy)]
+pub struct ExtEuclid {
+    pub gcd: u64,
+    pub coeff_left: u64,
+    pub coeff_right: u64,
+}
+
+impl ExtEuclid {
+    /// Computes Extended Euclidean Algorithm
+    pub fn compute(left: u64, right: u64) -> ExtEuclid {
         // TODO Make this give unique gcd value
         let mut pre = ExtEuclid {
             gcd: left,
-            coeff_left: one(),
-            coeff_right: zero(),
+            coeff_left: 1,
+            coeff_right: 0,
         };
         let mut post = ExtEuclid {
             gcd: right,
-            coeff_left: zero(),
-            coeff_right: one(),
+            coeff_left: 0,
+            coeff_right: 1,
         };
         // Terminates when post becomes zero
-        while !post.gcd.is_zero() {
+        while post.gcd != 0 {
             // Step post
             let (q, r) = pre.gcd.div_rem_euclid(&post.gcd);
             post.gcd = r;
@@ -62,94 +135,5 @@ impl<R: NativeRing + Euclid> ExtEuclid<R> {
         }
         // When post is zero, pre contains the gcd information
         pre
-    }
-}
-
-impl<R: NativeRing + Euclid> SimpleModulus<R> {
-    pub fn modulus(&self) -> R {
-        self.modulus
-    }
-
-    /**
-     * Inverts a modular value - this requires the extended Euclidean algorithm.
-     * */
-    pub fn invert(&self, value: R) -> R {
-        let modulus = self.modulus;
-        let gcd_res = ExtEuclid::compute(modulus, value);
-
-        // Requires gcd to be 1
-        assert!(gcd_res.gcd.is_one());
-
-        // Has modulus * coeff_left + value * coeff_right = 1
-        gcd_res.coeff_right
-    }
-}
-
-impl<R: NativeRing + Euclid> AddGroupHandle<R> for SimpleModulus<R> {
-    fn h_add(&self, lhs: &R, rhs: &R, out: &mut R) {
-        *out = self.representative(*lhs + *rhs);
-    }
-
-    fn h_sub(&self, lhs: &R, rhs: &R, out: &mut R) {
-        *out = self.representative(*lhs - *rhs);
-    }
-
-    fn h_add_assign(&self, lhs: &mut R, rhs: &R) {
-        *lhs = self.representative(*lhs + *rhs);
-    }
-
-    fn h_sub_assign(&self, lhs: &mut R, rhs: &R) {
-        *lhs = self.representative(*lhs - *rhs);
-    }
-
-    fn h_set_zero(&self, val: &mut R) {
-        *val = zero();
-    }
-
-    fn h_is_zero(&self, val: &R) -> bool {
-        self.representative(*val).is_zero()
-    }
-}
-
-impl<R: NativeRing + Euclid> RingHandle<R> for SimpleModulus<R> {
-    fn h_mul(&self, lhs: &R, rhs: &R, out: &mut R) {
-        *out = self.representative(*lhs * *rhs);
-    }
-
-    fn h_mul_assign(&self, lhs: &mut R, rhs: &R) {
-        *lhs = self.representative(*lhs * *rhs);
-    }
-
-    fn h_set_one(&self, val: &mut R) {
-        *val = one();
-    }
-}
-
-impl<R: NativeRing + Euclid> FieldHandle<R> for SimpleModulus<R> {
-    fn h_div(&self, lhs: &R, rhs: &R, out: &mut R) {
-        *out = self.representative(*lhs * self.invert(*rhs))
-    }
-
-    fn h_div_assign(&self, lhs: &mut R, rhs: &R) {
-        *lhs = self.representative(*lhs * self.invert(*rhs))
-    }
-}
-
-impl<R: NativeRing + Euclid> SimpleModulus<R> {
-    /// Power-mod by exponent.
-    pub fn h_pow(&self, base: &R, exp: usize, out: &mut R) {
-        *out = one();
-        let mut cur_base = *base;
-        let mut e = exp;
-
-        while e != 0 {
-            if e & 1 == 1 {
-                self.h_mul_assign(out, &cur_base);
-            }
-
-            let cur_base_ = cur_base;
-            self.h_mul_assign(&mut cur_base, &cur_base_);
-            e >>= 1;
-        }
     }
 }
