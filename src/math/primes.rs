@@ -1,6 +1,6 @@
 /// NTT primes generators.
 /// An NTT prime is a prime q such that
-/// \bZ_q[X] / \Phi_power (X) decomposes fully into \bZ_q^length.
+/// \bZ_q[X] / \Phi_order (X) decomposes fully into \bZ_q^degree.
 pub mod primes_ntt {
     use std::iter;
 
