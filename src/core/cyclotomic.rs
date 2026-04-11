@@ -4,8 +4,8 @@ use crate::{core::rns::RNSModulus, tensor::tensor::TensorShape};
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Cyclo {
     pub degree: usize,
-    /// The power where X^root_power = 1.
-    pub root_power: usize,
+    /// The order where X^order = 1.
+    pub order: usize,
 }
 
 impl TensorShape for Cyclo {
