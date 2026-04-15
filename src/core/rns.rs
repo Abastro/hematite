@@ -119,6 +119,7 @@ impl RNSShape for RNSModulus {
 
 /// Generic handle for RNS tensors.
 pub struct RNSHandle<H> {
+    /// Handle the modulus.
     pub handle_mod: dyn Fn(u64) -> H,
 }
 
@@ -264,17 +265,17 @@ where
     }
 }
 
-/// Shape of vector of RNS modulus.
+/// Shape of product of RNS modulus.
 ///
 /// For compatibility with e.g. RNSCyclo,
 /// the coord order is level * length.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct RNSVector {
+pub struct RNSProduct {
     pub modulus: RNSModulus,
     pub length: usize,
 }
 
-impl TensorShape for RNSVector {
+impl TensorShape for RNSProduct {
     type Coord = (usize, usize);
 
     fn coord_index(&self, coord: Self::Coord) -> usize {
@@ -287,7 +288,7 @@ impl TensorShape for RNSVector {
     }
 }
 
-impl RNSShape for RNSVector {
+impl RNSShape for RNSProduct {
     fn rns_modulus(&self) -> RNSModulus {
         self.modulus
     }
@@ -297,4 +298,4 @@ impl RNSShape for RNSVector {
     }
 }
 
-impl RNSPointwiseShape for RNSVector {}
+impl RNSPointwiseShape for RNSProduct {}
