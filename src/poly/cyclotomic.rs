@@ -1,5 +1,5 @@
 use crate::{
-    core::rns::{RNSModulus, RNSShape},
+    rns::rns::{RNSModulus, RNSShape},
     tensor::tensor::TensorShape,
 };
 

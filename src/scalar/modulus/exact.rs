@@ -2,7 +2,7 @@ use num_traits::Euclid;
 
 use crate::{
     engine::handle::{AddGroupHandle, FieldHandle, RingHandle},
-    modulus::modulus::Mod64,
+    scalar::modulus::Mod64,
 };
 
 /// Denotes modular arithmetic with straightforward reduction.

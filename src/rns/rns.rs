@@ -1,6 +1,6 @@
 use crate::{
     engine::handle::{AddGroupHandle, RingHandle},
-    modulus::modulus::Mod64,
+    scalar::modulus::Mod64,
     tensor::tensor::{Tensor, TensorShape},
     the_debug,
 };

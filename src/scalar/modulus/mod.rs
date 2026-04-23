@@ -3,3 +3,6 @@
 pub struct Mod64 {
     pub representative: u64,
 }
+
+/// Exact modular arithmetic.
+pub mod exact;

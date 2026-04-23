@@ -1,4 +1,4 @@
-use crate::real_cx::complexes::Cx128;
+use crate::scalar::complexes::Cx128;
 
 /// Discrete Fourier Transform (DFT) transforms ring C[X]/(X^M - 1) to vector C^M.
 ///

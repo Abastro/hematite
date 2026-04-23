@@ -1,4 +1,4 @@
-use crate::modulus::modulus::Mod64;
+use crate::scalar::modulus::Mod64;
 
 /// Number Theoretic Transform (NTT) is an analogue of DFT for modular integers.
 ///
