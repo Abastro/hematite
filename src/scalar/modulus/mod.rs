@@ -6,3 +6,6 @@ pub struct Mod64 {
 
 /// Exact modular arithmetic.
 pub mod exact;
+
+/// Modular arithmetic based on Barrett reduction.
+pub mod barrett;
