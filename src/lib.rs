@@ -6,9 +6,6 @@ pub mod utils;
 /// Underlying functionalities for implementations.
 pub mod engine;
 
-/// Mathematical basis, like finding primes.
-pub mod math;
-
 /// Arrays and tensors, with operations on them.
 pub mod tensor;
 

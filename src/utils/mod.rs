@@ -21,3 +21,6 @@ macro_rules! the_debug {
         }
     };
 }
+
+/// Mathematical basis, like prime finding.
+pub mod math;
