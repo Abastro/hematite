@@ -213,6 +213,34 @@ where
             }
         }
     }
+
+    fn h_neg(&self, arg: &Tensor<Shape, Mod64>, out: &mut Tensor<Shape, Mod64>) {
+        let shape = the_debug!(arg.shape(), out.shape());
+        let rns = shape.rns_modulus();
+
+        for level in 0..rns.modulus_count {
+            let handle = (self.handle_mod)(rns[level]);
+            for index in 0..shape.len_per_prime() {
+                let coord = shape.rns_coord(level, index);
+
+                handle.h_neg(&arg.data()[coord], &mut out.data_mut()[coord]);
+            }
+        }
+    }
+
+    fn h_neg_assign(&self, arg: &mut Tensor<Shape, Mod64>) {
+        let shape = arg.shape();
+        let rns = shape.rns_modulus();
+
+        for level in 0..rns.modulus_count {
+            let handle = (self.handle_mod)(rns[level]);
+            for index in 0..shape.len_per_prime() {
+                let coord = shape.rns_coord(level, index);
+
+                handle.h_neg_assign(&mut arg.data_mut()[coord]);
+            }
+        }
+    }
 }
 
 impl<Shape, H> RingHandle<Tensor<Shape, Mod64>> for RNSHandle<H>

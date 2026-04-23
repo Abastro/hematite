@@ -1,54 +1,42 @@
-use crate::engine::handle::{AddGroupHandle, FieldHandle, RingHandle};
+use crate::engine::handle::{AddGroupOps, FieldOps, RingOps};
 
 pub struct RealHandle {}
 
-impl AddGroupHandle<f64> for RealHandle {
-    fn h_set_zero(&self, val: &mut f64) {
-        *val = 0.0;
+impl AddGroupOps<f64> for RealHandle {
+    fn zero(&self) -> f64 {
+        0.0
     }
 
-    fn h_is_zero(&self, val: &f64) -> bool {
-        *val == 0.0
+    fn add(&self, lhs: f64, rhs: f64) -> f64 {
+        lhs + rhs
     }
 
-    fn h_add(&self, lhs: &f64, rhs: &f64, out: &mut f64) {
-        *out = *lhs + *rhs
+    fn neg(&self, arg: f64) -> f64 {
+        -arg
     }
 
-    fn h_sub(&self, lhs: &f64, rhs: &f64, out: &mut f64) {
-        *out = *lhs - *rhs
-    }
-
-    fn h_add_assign(&self, lhs: &mut f64, rhs: &f64) {
-        *lhs += *rhs
-    }
-
-    fn h_sub_assign(&self, lhs: &mut f64, rhs: &f64) {
-        *lhs -= *rhs
+    fn sub(&self, lhs: f64, rhs: f64) -> f64 {
+        lhs - rhs
     }
 }
 
 /// Assume f64 is enough precision
-impl RingHandle<f64> for RealHandle {
-    fn h_set_one(&self, val: &mut f64) {
-        *val = 1.0
+impl RingOps<f64> for RealHandle {
+    fn one(&self) -> f64 {
+        1.0
     }
 
-    fn h_mul(&self, lhs: &f64, rhs: &f64, out: &mut f64) {
-        *out = *lhs * *rhs
-    }
-
-    fn h_mul_assign(&self, lhs: &mut f64, rhs: &f64) {
-        *lhs *= *rhs
+    fn mul(&self, lhs: f64, rhs: f64) -> f64 {
+        lhs * rhs
     }
 }
 
-impl FieldHandle<f64> for RealHandle {
-    fn h_div(&self, lhs: &f64, rhs: &f64, out: &mut f64) {
-        *out = *lhs / *rhs
+impl FieldOps<f64> for RealHandle {
+    fn inv(&self, arg: f64) -> f64 {
+        1.0 / arg
     }
 
-    fn h_div_assign(&self, lhs: &mut f64, rhs: &f64) {
-        *lhs /= *rhs
+    fn div(&self, lhs: f64, rhs: f64) -> f64 {
+        lhs / rhs
     }
 }

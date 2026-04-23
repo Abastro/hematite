@@ -1,100 +1,90 @@
 use num_traits::Euclid;
 
 use crate::{
-    engine::handle::{AddGroupHandle, FieldHandle, RingHandle},
+    engine::handle::{AddGroupOps, FieldOps, RingOps},
     scalar::modulus::Mod64,
 };
 
-/// Denotes modular arithmetic with straightforward reduction.
-/// The representative is chosen as the unique remainder.
+/// Denotes modular arithmetic with exact reduction.
 ///
 /// Can overflow for modulus over 32 bit.
 #[derive(Debug, PartialEq, Eq)]
-pub struct ModulusSimple {
+pub struct ModExact {
     pub modulus: u64,
 }
 
-impl ModulusSimple {
+impl ModExact {
     pub fn into(&self, val: u64) -> Mod64 {
         Mod64 {
             representative: val % self.modulus,
         }
     }
 
-    pub fn h_pow(&self, base: Mod64, exp: usize) -> Mod64 {
+    pub fn pow(&self, base: Mod64, exp: usize) -> Mod64 {
         let mut out = Mod64 { representative: 1 };
         let mut cur_base = base;
         let mut e = exp;
 
         while e != 0 {
             if e & 1 == 1 {
-                self.h_mul_assign(&mut out, &cur_base);
+                out = self.mul(out, cur_base);
             }
 
-            let cur_base_ = cur_base;
-            self.h_mul_assign(&mut cur_base, &cur_base_);
+            cur_base = self.mul(cur_base, cur_base);
             e >>= 1;
         }
 
         out
     }
+}
 
-    pub fn invert(&self, value: Mod64) -> Mod64 {
-        let gcd_res = ExtEuclid::compute(self.modulus, value.representative);
+impl AddGroupOps<Mod64> for ModExact {
+    fn zero(&self) -> Mod64 {
+        return Mod64 { representative: 0 };
+    }
+
+    fn add(&self, lhs: Mod64, rhs: Mod64) -> Mod64 {
+        return Mod64 {
+            representative: (lhs.representative + rhs.representative) % self.modulus,
+        };
+    }
+
+    fn neg(&self, arg: Mod64) -> Mod64 {
+        return Mod64 {
+            representative: (self.modulus - arg.representative) % self.modulus,
+        };
+    }
+
+    fn sub(&self, lhs: Mod64, rhs: Mod64) -> Mod64 {
+        return Mod64 {
+            representative: (lhs.representative + self.modulus - rhs.representative) % self.modulus,
+        };
+    }
+}
+
+impl RingOps<Mod64> for ModExact {
+    fn one(&self) -> Mod64 {
+        return Mod64 { representative: 1 };
+    }
+
+    fn mul(&self, lhs: Mod64, rhs: Mod64) -> Mod64 {
+        return Mod64 {
+            representative: (lhs.representative * rhs.representative) % self.modulus,
+        };
+    }
+}
+
+impl FieldOps<Mod64> for ModExact {
+    fn inv(&self, arg: Mod64) -> Mod64 {
+        let gcd_res = ExtEuclid::compute(self.modulus, arg.representative);
         assert!(gcd_res.gcd == 1);
         Mod64 {
             representative: gcd_res.coeff_right,
         }
     }
-}
 
-impl AddGroupHandle<Mod64> for ModulusSimple {
-    fn h_set_zero(&self, val: &mut Mod64) {
-        val.representative = 0
-    }
-
-    fn h_is_zero(&self, val: &Mod64) -> bool {
-        val.representative == 0
-    }
-
-    fn h_add(&self, lhs: &Mod64, rhs: &Mod64, out: &mut Mod64) {
-        out.representative = (lhs.representative + rhs.representative) % self.modulus
-    }
-
-    fn h_sub(&self, lhs: &Mod64, rhs: &Mod64, out: &mut Mod64) {
-        out.representative = (lhs.representative + self.modulus - rhs.representative) % self.modulus
-    }
-
-    fn h_add_assign(&self, lhs: &mut Mod64, rhs: &Mod64) {
-        lhs.representative = (lhs.representative + rhs.representative) % self.modulus
-    }
-
-    fn h_sub_assign(&self, lhs: &mut Mod64, rhs: &Mod64) {
-        lhs.representative = (lhs.representative + self.modulus - rhs.representative) % self.modulus
-    }
-}
-
-impl RingHandle<Mod64> for ModulusSimple {
-    fn h_set_one(&self, val: &mut Mod64) {
-        val.representative = 1
-    }
-
-    fn h_mul(&self, lhs: &Mod64, rhs: &Mod64, out: &mut Mod64) {
-        out.representative = (lhs.representative * rhs.representative) % self.modulus
-    }
-
-    fn h_mul_assign(&self, lhs: &mut Mod64, rhs: &Mod64) {
-        lhs.representative = (lhs.representative * rhs.representative) % self.modulus
-    }
-}
-
-impl FieldHandle<Mod64> for ModulusSimple {
-    fn h_div(&self, lhs: &Mod64, rhs: &Mod64, out: &mut Mod64) {
-        self.h_mul(lhs, &self.invert(*rhs), out);
-    }
-
-    fn h_div_assign(&self, lhs: &mut Mod64, rhs: &Mod64) {
-        self.h_mul_assign(lhs, &self.invert(*rhs));
+    fn div(&self, lhs: Mod64, rhs: Mod64) -> Mod64 {
+        self.mul(lhs, self.inv(rhs))
     }
 }
 

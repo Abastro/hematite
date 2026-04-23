@@ -1,57 +1,45 @@
-use num::{Complex, One, Zero};
+use num::Complex;
 
-use crate::engine::handle::{AddGroupHandle, FieldHandle, RingHandle};
+use crate::engine::handle::{AddGroupOps, FieldOps, RingOps};
 
 pub type Cx128 = Complex<f64>;
 
 pub struct ComplexHandle {}
 
-impl AddGroupHandle<Cx128> for ComplexHandle {
-    fn h_set_zero(&self, val: &mut Cx128) {
-        val.set_zero();
+impl AddGroupOps<Cx128> for ComplexHandle {
+    fn zero(&self) -> Cx128 {
+        Cx128::new(0.0, 0.0)
     }
 
-    fn h_is_zero(&self, val: &Cx128) -> bool {
-        val.is_zero()
+    fn add(&self, lhs: Cx128, rhs: Cx128) -> Cx128 {
+        lhs + rhs
     }
 
-    fn h_add(&self, lhs: &Cx128, rhs: &Cx128, out: &mut Cx128) {
-        *out = *lhs + *rhs
+    fn neg(&self, arg: Cx128) -> Cx128 {
+        -arg
     }
 
-    fn h_sub(&self, lhs: &Cx128, rhs: &Cx128, out: &mut Cx128) {
-        *out = *lhs - *rhs
-    }
-
-    fn h_add_assign(&self, lhs: &mut Cx128, rhs: &Cx128) {
-        *lhs += *rhs
-    }
-
-    fn h_sub_assign(&self, lhs: &mut Cx128, rhs: &Cx128) {
-        *lhs -= *rhs
+    fn sub(&self, lhs: Cx128, rhs: Cx128) -> Cx128 {
+        lhs - rhs
     }
 }
 
-impl RingHandle<Cx128> for ComplexHandle {
-    fn h_set_one(&self, val: &mut Cx128) {
-        val.set_one();
+impl RingOps<Cx128> for ComplexHandle {
+    fn one(&self) -> Cx128 {
+        Cx128::new(1.0, 0.0)
     }
 
-    fn h_mul(&self, lhs: &Cx128, rhs: &Cx128, out: &mut Cx128) {
-        *out = *lhs * *rhs
-    }
-
-    fn h_mul_assign(&self, lhs: &mut Cx128, rhs: &Cx128) {
-        *lhs *= *rhs
+    fn mul(&self, lhs: Cx128, rhs: Cx128) -> Cx128 {
+        lhs * rhs
     }
 }
 
-impl FieldHandle<Cx128> for ComplexHandle {
-    fn h_div(&self, lhs: &Cx128, rhs: &Cx128, out: &mut Cx128) {
-        *out = *lhs / *rhs
+impl FieldOps<Cx128> for ComplexHandle {
+    fn inv(&self, arg: Cx128) -> Cx128 {
+        1.0 / arg
     }
 
-    fn h_div_assign(&self, lhs: &mut Cx128, rhs: &Cx128) {
-        *lhs /= *rhs
+    fn div(&self, lhs: Cx128, rhs: Cx128) -> Cx128 {
+        lhs / rhs
     }
 }

@@ -3,7 +3,10 @@ use std::{
     ops::{Index, IndexMut},
 };
 
-use crate::engine::handle::{AddGroupHandle, RingHandle};
+use crate::{
+    engine::handle::{AddGroupHandle, RingHandle},
+    the_debug,
+};
 
 /// A lightweight representation of the shape of a tensor.
 pub trait TensorShape: Copy {
@@ -101,10 +104,9 @@ where
     }
 
     fn h_add(&self, lhs: &Tensor<Shape, T>, rhs: &Tensor<Shape, T>, out: &mut Tensor<Shape, T>) {
-        debug_assert_eq!(lhs.shape, out.shape);
-        debug_assert_eq!(rhs.shape, out.shape);
+        let shape = the_debug!(lhs.shape, rhs.shape, out.shape);
 
-        for idx in 0..out.shape.total_size() {
+        for idx in 0..shape.total_size() {
             self.handle_scalar
                 .h_add(&lhs.data[idx], &rhs.data[idx], &mut out.data[idx]);
         }
@@ -135,6 +137,20 @@ where
         for idx in 0..rhs.shape.total_size() {
             self.handle_scalar
                 .h_sub_assign(&mut lhs.data[idx], &rhs.data[idx]);
+        }
+    }
+
+    fn h_neg(&self, arg: &Tensor<Shape, T>, out: &mut Tensor<Shape, T>) {
+        debug_assert_eq!(arg.shape, out.shape);
+
+        for idx in 0..out.shape.total_size() {
+            self.handle_scalar.h_neg(&arg.data[idx], &mut out.data[idx]);
+        }
+    }
+
+    fn h_neg_assign(&self, arg: &mut Tensor<Shape, T>) {
+        for idx in 0..arg.shape.total_size() {
+            self.handle_scalar.h_neg_assign(&mut arg.data[idx]);
         }
     }
 }
