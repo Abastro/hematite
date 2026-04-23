@@ -1,6 +1,5 @@
 /// Metadata for the ciphertext.
-pub struct Metadata {
-}
+pub struct Metadata {}
 
 // /// Ciphertext of rank K,
 // /// with decryption circuit given as m = b_0 + a_0 s_0 ... + a_K s_K.

@@ -20,7 +20,7 @@ impl TensorShape for Vector {
 /// Denotes a shape for product of same objects.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Product {
-    pub length: usize
+    pub length: usize,
 }
 
 impl TensorShape for Product {
@@ -33,5 +33,4 @@ impl TensorShape for Product {
     fn total_size(&self) -> usize {
         self.length
     }
-    
 }

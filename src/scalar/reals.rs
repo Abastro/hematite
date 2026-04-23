@@ -28,7 +28,6 @@ impl AddGroupHandle<f64> for RealHandle {
     }
 }
 
-
 /// Assume f64 is enough precision
 impl RingHandle<f64> for RealHandle {
     fn h_set_one(&self, val: &mut f64) {

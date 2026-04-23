@@ -13,7 +13,7 @@ pub mod math;
 pub mod tensor;
 
 /// Scalars relevant to homomorphic operations.
-/// 
+///
 /// Namely, integers, real/complex numbers, and modular arithmetic.
 pub mod scalar;
 

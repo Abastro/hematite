@@ -1,9 +1,9 @@
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
 /// Wrapper to support runtime-specific operations, for e.g. modular arithmetic.
-/// 
+///
 /// This lets us call operations without carrying around the operation-specific data in all instances.
-/// 
+///
 /// The handle should always be passed as a reference.
 #[derive(Debug, Clone, Copy)]
 pub struct Wrap<H, T> {
