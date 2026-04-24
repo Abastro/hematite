@@ -7,14 +7,14 @@ use crate::{
 
 /// Denotes modular arithmetic with exact reduction.
 ///
-/// Can overflow for modulus over 32 bit.
-#[derive(Debug, PartialEq, Eq)]
+/// Works for modulus < 2^63.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ModExact {
     pub modulus: u64,
 }
 
 impl ModExact {
-    pub fn into(&self, val: u64) -> Mod64 {
+    pub fn embed(&self, val: u64) -> Mod64 {
         Mod64 {
             representative: val % self.modulus,
         }
@@ -68,8 +68,9 @@ impl RingOps<Mod64> for ModExact {
     }
 
     fn mul(&self, lhs: Mod64, rhs: Mod64) -> Mod64 {
+        let prod = (lhs.representative as u128) * (rhs.representative as u128);
         return Mod64 {
-            representative: (lhs.representative * rhs.representative) % self.modulus,
+            representative: (prod % (self.modulus as u128)) as u64,
         };
     }
 }
@@ -78,8 +79,9 @@ impl FieldOps<Mod64> for ModExact {
     fn inv(&self, arg: Mod64) -> Mod64 {
         let gcd_res = ExtEuclid::compute(self.modulus, arg.representative);
         assert!(gcd_res.gcd == 1);
+        let rep = gcd_res.coeff_right.rem_euclid(self.modulus as i64) as u64;
         Mod64 {
-            representative: gcd_res.coeff_right,
+            representative: rep,
         }
     }
 
@@ -95,8 +97,8 @@ impl FieldOps<Mod64> for ModExact {
 #[derive(Clone, Copy)]
 pub struct ExtEuclid {
     pub gcd: u64,
-    pub coeff_left: u64,
-    pub coeff_right: u64,
+    pub coeff_left: i64,
+    pub coeff_right: i64,
 }
 
 impl ExtEuclid {
@@ -115,15 +117,82 @@ impl ExtEuclid {
         };
         // Terminates when post becomes zero
         while post.gcd != 0 {
-            // Step post
             let (q, r) = pre.gcd.div_rem_euclid(&post.gcd);
-            post.gcd = r;
-            post.coeff_left = pre.coeff_left - q * post.coeff_left;
-            post.coeff_right = post.coeff_right - q * post.coeff_right;
-            // Step pre
-            pre = post;
+            (pre, post) = (
+                post,
+                ExtEuclid {
+                    gcd: r,
+                    coeff_left: pre.coeff_left - (q as i64) * post.coeff_left,
+                    coeff_right: pre.coeff_right - (q as i64) * post.coeff_right,
+                },
+            )
         }
         // When post is zero, pre contains the gcd information
         pre
+    }
+}
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    const MAX_EXACT_MODULUS: u64 = (1u64 << 63) - 1;
+
+    pub fn exact_modulus() -> impl Strategy<Value = ModExact> {
+        (2u64..=MAX_EXACT_MODULUS).prop_map(|modulus| ModExact { modulus })
+    }
+
+    pub fn prime_modulus() -> impl Strategy<Value = ModExact> {
+        prop_oneof![
+            Just(2u64),
+            Just(3),
+            Just(5),
+            Just(7),
+            Just(11),
+            Just(13),
+            Just(17),
+            Just(101),
+            Just(257),
+            Just(65537),
+            Just((1u64 << 31) - 1),
+            Just((15u64 << 27) + 1),
+            Just((1u64 << 61) - 1),
+        ]
+        .prop_map(|modulus| ModExact { modulus })
+    }
+
+    pub fn modular_value(modulus: u64) -> impl Strategy<Value = Mod64> {
+        (0u64..modulus).prop_map(|representative| Mod64 { representative })
+    }
+
+    // TODO Algebraic tests
+
+    proptest! {
+        #[test]
+        fn add_comm((p, (a, b)) in exact_modulus().prop_ind_flat_map2(|p| (modular_value(p.modulus), modular_value(p.modulus)))) {
+            prop_assert_eq!(p.add(a, b), p.add(b, a))
+        }
+
+        #[test]
+        fn add_assoc((p, (a, b, c)) in exact_modulus().prop_ind_flat_map2(|p| (modular_value(p.modulus), modular_value(p.modulus), modular_value(p.modulus)))) {
+            prop_assert_eq!(p.add(a, p.add(b, c)), p.add(p.add(a, b), c))
+        }
+
+        #[test]
+        fn mul_comm((p, (a, b)) in exact_modulus().prop_ind_flat_map2(|p| (modular_value(p.modulus), modular_value(p.modulus)))) {
+            prop_assert_eq!(p.mul(a, b), p.mul(b, a))
+        }
+
+        #[test]
+        fn mul_assoc((p, (a, b, c)) in exact_modulus().prop_ind_flat_map2(|p| (modular_value(p.modulus), modular_value(p.modulus), modular_value(p.modulus)))) {
+            prop_assert_eq!(p.mul(a, p.mul(b, c)), p.mul(p.mul(a, b), c))
+        }
+
+        #[test]
+        fn mul_inv_is_one((p, a) in prime_modulus().prop_ind_flat_map2(|p| modular_value(p.modulus))) {
+            prop_assume!(a != p.zero());
+            prop_assert_eq!(p.mul(a, p.inv(a)), p.one());
+        }
     }
 }
