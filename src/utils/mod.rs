@@ -22,5 +22,8 @@ macro_rules! the_debug {
     };
 }
 
+/// Bit handling.
+pub mod bits;
+
 /// Mathematical basis, like prime finding.
 pub mod math;
