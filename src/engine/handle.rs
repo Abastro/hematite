@@ -87,19 +87,28 @@ where
     }
 }
 
-impl<G, H> AddAssign<&G> for Wrap<&H, &mut G> where H: AddGroupHandle<G> {
+impl<G, H> AddAssign<&G> for Wrap<&H, &mut G>
+where
+    H: AddGroupHandle<G>,
+{
     fn add_assign(&mut self, rhs: &G) {
         self.handle.h_add_assign(self.value, rhs);
     }
 }
 
-impl<G, H> SubAssign<&G> for Wrap<&H, &mut G> where H: AddGroupHandle<G> {
+impl<G, H> SubAssign<&G> for Wrap<&H, &mut G>
+where
+    H: AddGroupHandle<G>,
+{
     fn sub_assign(&mut self, rhs: &G) {
         self.handle.h_sub_assign(self.value, rhs);
     }
 }
 
-impl<G, H> Add<&G> for Wrap<&H, G> where H: AddGroupHandle<G> {
+impl<G, H> Add<&G> for Wrap<&H, G>
+where
+    H: AddGroupHandle<G>,
+{
     type Output = Self;
 
     fn add(mut self, rhs: &G) -> Self {
@@ -108,7 +117,10 @@ impl<G, H> Add<&G> for Wrap<&H, G> where H: AddGroupHandle<G> {
     }
 }
 
-impl<G, H> Sub<&G> for Wrap<&H, G> where H: AddGroupHandle<G> {
+impl<G, H> Sub<&G> for Wrap<&H, G>
+where
+    H: AddGroupHandle<G>,
+{
     type Output = Self;
 
     fn sub(mut self, rhs: &G) -> Self {
@@ -118,6 +130,8 @@ impl<G, H> Sub<&G> for Wrap<&H, G> where H: AddGroupHandle<G> {
 }
 
 /// Handle for ring operations.
+///
+/// We only consider commutative rings in our convention, for HE purposes.
 pub trait RingHandle<R: ?Sized>: AddGroupHandle<R> {
     fn h_set_one(&self, val: &mut R);
     fn h_mul(&self, lhs: &R, rhs: &R, out: &mut R);
@@ -212,4 +226,209 @@ impl<F, H: FieldHandle<F>> DivAssign<&F> for Wrap<&H, &mut F> {
     fn div_assign(&mut self, rhs: &F) {
         self.handle.h_div_assign(self.value, rhs);
     }
+}
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use super::*;
+    use proptest::{prelude::*, test_runner::TestRunner};
+
+    /// Addition is associative: (a + b) + c == a + (b + c)
+    pub fn ops_add_assoc<G, Ops, SO, SV, F>(ops_strategy: SO, value_strategy: F)
+    where
+        G: Copy + std::fmt::Debug + PartialEq,
+        Ops: AddGroupOps<G> + std::fmt::Debug,
+        SO: Strategy<Value = Ops>,
+        SV: Strategy<Value = G>,
+        F: Fn(&Ops) -> SV,
+    {
+        let mut runner = TestRunner::default();
+        runner
+            .run(
+                &ops_strategy.prop_ind_flat_map2(move |ops| {
+                    (
+                        value_strategy(&ops),
+                        value_strategy(&ops),
+                        value_strategy(&ops),
+                    )
+                }),
+                |(ops, (a, b, c))| {
+                    prop_assert_eq!(
+                        ops.add(ops.add(a, b), c),
+                        ops.add(a, ops.add(b, c)),
+                        "add-associativity"
+                    );
+                    Ok(())
+                },
+            )
+            .unwrap();
+    }
+
+    /// Addition is commutative: a + b == b + a
+    pub fn ops_add_comm<G, Ops, SO, SV, F>(ops_strategy: SO, value_strategy: F)
+    where
+        G: Copy + std::fmt::Debug + PartialEq,
+        Ops: AddGroupOps<G> + std::fmt::Debug,
+        SO: Strategy<Value = Ops>,
+        SV: Strategy<Value = G>,
+        F: Fn(&Ops) -> SV,
+    {
+        let mut runner = TestRunner::default();
+        runner
+            .run(
+                &ops_strategy
+                    .prop_ind_flat_map2(move |ops| (value_strategy(&ops), value_strategy(&ops))),
+                |(ops, (a, b))| {
+                    prop_assert_eq!(ops.add(a, b), ops.add(b, a), "add-commutativity");
+                    Ok(())
+                },
+            )
+            .unwrap();
+    }
+
+    /// Addition has identity: a + 0 == a == 0 + a
+    pub fn ops_add_identity<G, Ops, SO, SV, F>(ops_strategy: SO, value_strategy: F)
+    where
+        G: Copy + std::fmt::Debug + PartialEq,
+        Ops: AddGroupOps<G> + std::fmt::Debug,
+        SO: Strategy<Value = Ops>,
+        SV: Strategy<Value = G>,
+        F: Fn(&Ops) -> SV,
+    {
+        let mut runner = TestRunner::default();
+        runner
+            .run(
+                &ops_strategy.prop_ind_flat_map2(move |ops| value_strategy(&ops)),
+                |(ops, a)| {
+                    prop_assert_eq!(ops.add(a, ops.zero()), a, "add-identity-left");
+                    prop_assert_eq!(ops.add(ops.zero(), a), a, "add-identity-right");
+                    Ok(())
+                },
+            )
+            .unwrap();
+    }
+
+    /// Addition has inverse: a + (-a) == 0 == (-a) + a
+    pub fn ops_add_inverse<G, Ops, SO, SV, F>(ops_strategy: SO, value_strategy: F)
+    where
+        G: Copy + std::fmt::Debug + PartialEq,
+        Ops: AddGroupOps<G> + std::fmt::Debug,
+        SO: Strategy<Value = Ops>,
+        SV: Strategy<Value = G>,
+        F: Fn(&Ops) -> SV,
+    {
+        let mut runner = TestRunner::default();
+        runner
+            .run(
+                &ops_strategy.prop_ind_flat_map2(move |ops| value_strategy(&ops)),
+                |(ops, a)| {
+                    prop_assert_eq!(ops.add(a, ops.neg(a)), ops.zero(), "add-inverse-left");
+                    prop_assert_eq!(ops.add(ops.neg(a), a), ops.zero(), "add-inverse-right");
+                    Ok(())
+                },
+            )
+            .unwrap();
+    }
+
+    // TODO Subtraction compatibility
+
+    /// Multiplication is associative: (a * b) * c == a * (b * c)
+    pub fn ops_mul_assoc<R, Ops, SO, SV, F>(ops_strategy: SO, value_strategy: F)
+    where
+        R: Copy + std::fmt::Debug + PartialEq,
+        Ops: RingOps<R> + std::fmt::Debug,
+        SO: Strategy<Value = Ops>,
+        SV: Strategy<Value = R>,
+        F: Fn(&Ops) -> SV,
+    {
+        let mut runner = TestRunner::default();
+        runner
+            .run(
+                &ops_strategy.prop_ind_flat_map2(move |ops| {
+                    (
+                        value_strategy(&ops),
+                        value_strategy(&ops),
+                        value_strategy(&ops),
+                    )
+                }),
+                |(ops, (a, b, c))| {
+                    prop_assert_eq!(
+                        ops.mul(ops.mul(a, b), c),
+                        ops.mul(a, ops.mul(b, c)),
+                        "mul-associativity"
+                    );
+                    Ok(())
+                },
+            )
+            .unwrap();
+    }
+
+    /// Multiplication is commutative: a * b == b * a
+    pub fn ops_mul_comm<R, Ops, SO, SV, F>(ops_strategy: SO, value_strategy: F)
+    where
+        R: Copy + std::fmt::Debug + PartialEq,
+        Ops: RingOps<R> + std::fmt::Debug,
+        SO: Strategy<Value = Ops>,
+        SV: Strategy<Value = R>,
+        F: Fn(&Ops) -> SV,
+    {
+        let mut runner = TestRunner::default();
+        runner
+            .run(
+                &ops_strategy
+                    .prop_ind_flat_map2(move |ops| (value_strategy(&ops), value_strategy(&ops))),
+                |(ops, (a, b))| {
+                    prop_assert_eq!(ops.mul(a, b), ops.mul(b, a), "mul-commutativity");
+                    Ok(())
+                },
+            )
+            .unwrap();
+    }
+
+    /// Multiplication has identity: a * 1 == a == 1 * a
+    pub fn ops_mul_identity<R, Ops, SO, SV, F>(ops_strategy: SO, value_strategy: F)
+    where
+        R: Copy + std::fmt::Debug + PartialEq,
+        Ops: RingOps<R> + std::fmt::Debug,
+        SO: Strategy<Value = Ops>,
+        SV: Strategy<Value = R>,
+        F: Fn(&Ops) -> SV,
+    {
+        let mut runner = TestRunner::default();
+        runner
+            .run(
+                &ops_strategy.prop_ind_flat_map2(move |ops| value_strategy(&ops)),
+                |(ops, a)| {
+                    prop_assert_eq!(ops.mul(a, ops.one()), a, "mul-identity-left");
+                    prop_assert_eq!(ops.mul(ops.one(), a), a, "mul-identity-right");
+                    Ok(())
+                },
+            )
+            .unwrap();
+    }
+
+    /// Multiplication has inverse: a * a^-1 == 1 == a^-1 * a, for a != 0.
+    pub fn ops_mul_inverse<Fld, Ops, SO, SV, F>(ops_strategy: SO, value_strategy: F)
+    where
+        Fld: Copy + std::fmt::Debug + PartialEq,
+        Ops: FieldOps<Fld> + std::fmt::Debug,
+        SO: Strategy<Value = Ops>,
+        SV: Strategy<Value = Fld>,
+        F: Fn(&Ops) -> SV,
+    {
+        let mut runner = TestRunner::default();
+        runner
+            .run(
+                &ops_strategy.prop_ind_flat_map2(move |ops| value_strategy(&ops)),
+                |(ops, a)| {
+                    prop_assume!(a != ops.zero());
+                    prop_assert_eq!(ops.mul(a, ops.inv(a)), ops.one(), "mul-inverse-left");
+                    prop_assert_eq!(ops.mul(ops.inv(a), a), ops.one(), "mul-inverse-right");
+                    Ok(())
+                },
+            )
+            .unwrap();
+    }
+
+    // TODO Division compatibility
 }
