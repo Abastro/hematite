@@ -137,6 +137,11 @@ pub(crate) mod tests {
     use super::*;
     use proptest::prelude::*;
 
+    use crate::engine::handle::tests::{
+        ops_add_assoc, ops_add_comm, ops_add_identity, ops_add_inverse, ops_mul_assoc,
+        ops_mul_comm, ops_mul_identity, ops_mul_inverse,
+    };
+
     const MAX_EXACT_MODULUS: u64 = (1u64 << 63) - 1;
 
     pub fn exact_modulus() -> impl Strategy<Value = ModExact> {
@@ -166,33 +171,50 @@ pub(crate) mod tests {
         (0u64..modulus).prop_map(|representative| Mod64 { representative })
     }
 
-    // TODO Algebraic tests
+    // Additive group tests
 
-    proptest! {
-        #[test]
-        fn add_comm((p, (a, b)) in exact_modulus().prop_ind_flat_map2(|p| (modular_value(p.modulus), modular_value(p.modulus)))) {
-            prop_assert_eq!(p.add(a, b), p.add(b, a))
-        }
+    #[test]
+    fn add_assoc() {
+        ops_add_assoc(exact_modulus(), |p| modular_value(p.modulus));
+    }
 
-        #[test]
-        fn add_assoc((p, (a, b, c)) in exact_modulus().prop_ind_flat_map2(|p| (modular_value(p.modulus), modular_value(p.modulus), modular_value(p.modulus)))) {
-            prop_assert_eq!(p.add(a, p.add(b, c)), p.add(p.add(a, b), c))
-        }
+    #[test]
+    fn add_comm() {
+        ops_add_comm(exact_modulus(), |p| modular_value(p.modulus));
+    }
 
-        #[test]
-        fn mul_comm((p, (a, b)) in exact_modulus().prop_ind_flat_map2(|p| (modular_value(p.modulus), modular_value(p.modulus)))) {
-            prop_assert_eq!(p.mul(a, b), p.mul(b, a))
-        }
+    #[test]
+    fn add_identity() {
+        ops_add_identity(exact_modulus(), |p| modular_value(p.modulus));
+    }
 
-        #[test]
-        fn mul_assoc((p, (a, b, c)) in exact_modulus().prop_ind_flat_map2(|p| (modular_value(p.modulus), modular_value(p.modulus), modular_value(p.modulus)))) {
-            prop_assert_eq!(p.mul(a, p.mul(b, c)), p.mul(p.mul(a, b), c))
-        }
+    #[test]
+    fn add_inverse() {
+        ops_add_inverse(exact_modulus(), |p| modular_value(p.modulus));
+    }
 
-        #[test]
-        fn mul_inv_is_one((p, a) in prime_modulus().prop_ind_flat_map2(|p| modular_value(p.modulus))) {
-            prop_assume!(a != p.zero());
-            prop_assert_eq!(p.mul(a, p.inv(a)), p.one());
-        }
+    // Ring tests
+
+    #[test]
+    fn mul_assoc() {
+        ops_mul_assoc(exact_modulus(), |p| modular_value(p.modulus));
+    }
+
+    #[test]
+    fn mul_comm() {
+        ops_mul_comm(exact_modulus(), |p| modular_value(p.modulus));
+    }
+
+    #[test]
+    fn mul_identity() {
+        ops_mul_identity(exact_modulus(), |p| modular_value(p.modulus));
+    }
+
+    // Field tests
+
+    /// Multiplicative inverse of the prime field.
+    #[test]
+    fn mul_inverse() {
+        ops_mul_inverse(prime_modulus(), |p| modular_value(p.modulus));
     }
 }
