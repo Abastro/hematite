@@ -52,3 +52,12 @@ pub mod primes_ntt {
         })
     }
 }
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use proptest::prelude::Strategy;
+
+    pub fn prime_strategy(min: u64, max: u64) -> impl Strategy<Value = u64> {
+        (min..max).prop_filter("not prime", |&n| primal::is_prime(n))
+    }
+}

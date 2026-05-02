@@ -137,8 +137,12 @@ pub(crate) mod tests {
     use super::*;
     use proptest::prelude::*;
 
-    use crate::engine::handle::tests::{
-        ops_add_assoc, ops_add_comm, ops_add_identity, ops_add_inverse, ops_div_compat, ops_mul_assoc, ops_mul_comm, ops_mul_identity, ops_mul_inverse
+    use crate::{
+        engine::handle::tests::{
+            ops_add_assoc, ops_add_comm, ops_add_identity, ops_add_inverse, ops_div_compat,
+            ops_mul_assoc, ops_mul_comm, ops_mul_identity, ops_mul_inverse,
+        },
+        utils::math::primes::tests::prime_strategy,
     };
 
     const MAX_EXACT_MODULUS: u64 = (1u64 << 63) - 1;
@@ -149,19 +153,8 @@ pub(crate) mod tests {
 
     pub fn prime_modulus() -> impl Strategy<Value = ModExact> {
         prop_oneof![
-            Just(2u64),
-            Just(3),
-            Just(5),
-            Just(7),
-            Just(11),
-            Just(13),
-            Just(17),
-            Just(101),
-            Just(257),
-            Just(65537),
-            Just((1u64 << 31) - 1),
-            Just((15u64 << 27) + 1),
-            Just((1u64 << 61) - 1),
+            prop_oneof![Just(2u64), Just(3), Just(5), Just(7), Just(11),],
+            prime_strategy(12, MAX_EXACT_MODULUS)
         ]
         .prop_map(|modulus| ModExact { modulus })
     }

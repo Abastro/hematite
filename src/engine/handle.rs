@@ -232,6 +232,8 @@ impl<F, H: FieldHandle<F>> DivAssign<&F> for Wrap<&H, &mut F> {
 pub(crate) mod tests {
     use super::*;
     use proptest::{prelude::*, test_runner::TestRunner};
+    
+    // TODO Add test helpers for non-copying handles
 
     /// Addition is associative: (a + b) + c == a + (b + c)
     pub fn ops_add_assoc<G, Ops, SO, SV, F>(ops_strategy: SO, value_strategy: F)
