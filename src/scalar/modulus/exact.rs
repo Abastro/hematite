@@ -137,13 +137,7 @@ pub(crate) mod tests {
     use super::*;
     use proptest::prelude::*;
 
-    use crate::{
-        engine::handle::tests::{
-            ops_add_assoc, ops_add_comm, ops_add_identity, ops_add_inverse, ops_div_compat,
-            ops_mul_assoc, ops_mul_comm, ops_mul_identity, ops_mul_inverse,
-        },
-        utils::math::primes::tests::prime_strategy,
-    };
+    use crate::{engine::handle::tests::*, utils::math::primes::tests::prime_strategy};
 
     const MAX_EXACT_MODULUS: u64 = (1u64 << 63) - 1;
 
