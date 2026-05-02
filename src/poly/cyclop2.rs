@@ -1,9 +1,16 @@
-use crate::{poly::cyclotomic::Cyclo, tensor::tensor::TensorShape};
+use crate::{poly::cyclotomic::Cyclo, tensor::tensor::TensorShape, utils::math::powers::is_pow2};
 
 /// Denotes the standard power-of-two cyclotomic ring, `Z[X]/(X^N + 1)`.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct CycloP2 {
-    pub degree: usize,
+    degree: usize,
+}
+
+impl CycloP2 {
+    pub fn new(degree: usize) -> Self {
+        assert!(is_pow2(degree as u64));
+        CycloP2 { degree }
+    }
 }
 
 impl TensorShape for CycloP2 {
