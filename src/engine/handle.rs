@@ -430,5 +430,28 @@ pub(crate) mod tests {
             .unwrap();
     }
 
+    /// Division compatibility with inverse: a * b^(-1) = a / b, for b != 0.
+    pub fn ops_div_compat<Fld, Ops, SO, SV, F>(ops_strategy: SO, value_strategy: F)
+    where
+        Fld: Copy + std::fmt::Debug + PartialEq,
+        Ops: FieldOps<Fld> + std::fmt::Debug,
+        SO: Strategy<Value = Ops>,
+        SV: Strategy<Value = Fld>,
+        F: Fn(&Ops) -> SV,
+    {
+        let mut runner = TestRunner::default();
+        runner
+            .run(
+                &ops_strategy
+                    .prop_ind_flat_map2(move |ops| (value_strategy(&ops), value_strategy(&ops))),
+                |(ops, (a, b))| {
+                    prop_assume!(b != ops.zero());
+                    prop_assert_eq!(ops.mul(a, ops.inv(b)), ops.div(a, b), "div-compat");
+                    Ok(())
+                },
+            )
+            .unwrap();
+    }
+
     // TODO Division compatibility
 }

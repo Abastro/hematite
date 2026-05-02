@@ -138,8 +138,7 @@ pub(crate) mod tests {
     use proptest::prelude::*;
 
     use crate::engine::handle::tests::{
-        ops_add_assoc, ops_add_comm, ops_add_identity, ops_add_inverse, ops_mul_assoc,
-        ops_mul_comm, ops_mul_identity, ops_mul_inverse,
+        ops_add_assoc, ops_add_comm, ops_add_identity, ops_add_inverse, ops_div_compat, ops_mul_assoc, ops_mul_comm, ops_mul_identity, ops_mul_inverse
     };
 
     const MAX_EXACT_MODULUS: u64 = (1u64 << 63) - 1;
@@ -216,5 +215,10 @@ pub(crate) mod tests {
     #[test]
     fn mul_inverse() {
         ops_mul_inverse(prime_modulus(), |p| modular_value(p.modulus));
+    }
+
+    #[test]
+    fn div_compat() {
+        ops_div_compat(prime_modulus(), |p| modular_value(p.modulus));
     }
 }
