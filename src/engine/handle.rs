@@ -232,7 +232,7 @@ impl<F, H: FieldHandle<F>> DivAssign<&F> for Wrap<&H, &mut F> {
 pub(crate) mod tests {
     use super::*;
     use proptest::{prelude::*, test_runner::TestRunner};
-    
+
     // TODO Add test helpers for non-copying handles
 
     /// Addition is associative: (a + b) + c == a + (b + c)
@@ -333,6 +333,27 @@ pub(crate) mod tests {
     }
 
     // TODO Subtraction compatibility
+    /// Subtraction compatibility with negate: a - b == a + (- b)
+    pub fn ops_sub_compat<G, Ops, SO, SV, F>(ops_strategy: SO, value_strategy: F)
+    where
+        G: Copy + std::fmt::Debug + PartialEq,
+        Ops: AddGroupOps<G> + std::fmt::Debug,
+        SO: Strategy<Value = Ops>,
+        SV: Strategy<Value = G>,
+        F: Fn(&Ops) -> SV,
+    {
+        let mut runner = TestRunner::default();
+        runner
+            .run(
+                &ops_strategy
+                    .prop_ind_flat_map2(move |ops| (value_strategy(&ops), value_strategy(&ops))),
+                |(ops, (a, b))| {
+                    prop_assert_eq!(ops.sub(a, b), ops.add(a, ops.neg(b)), "sub-compat");
+                    Ok(())
+                },
+            )
+            .unwrap();
+    }
 
     /// Multiplication is associative: (a * b) * c == a * (b * c)
     pub fn ops_mul_assoc<R, Ops, SO, SV, F>(ops_strategy: SO, value_strategy: F)
@@ -448,12 +469,10 @@ pub(crate) mod tests {
                     .prop_ind_flat_map2(move |ops| (value_strategy(&ops), value_strategy(&ops))),
                 |(ops, (a, b))| {
                     prop_assume!(b != ops.zero());
-                    prop_assert_eq!(ops.mul(a, ops.inv(b)), ops.div(a, b), "div-compat");
+                    prop_assert_eq!(ops.div(a, b), ops.mul(a, ops.inv(b)), "div-compat");
                     Ok(())
                 },
             )
             .unwrap();
     }
-
-    // TODO Division compatibility
 }

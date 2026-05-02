@@ -179,6 +179,11 @@ pub(crate) mod tests {
         ops_add_inverse(exact_modulus(), |p| modular_value(p.modulus));
     }
 
+    #[test]
+    fn sub_compat() {
+        ops_sub_compat(exact_modulus(), |p| modular_value(p.modulus));
+    }
+
     // Ring tests
 
     #[test]

@@ -10,10 +10,10 @@ pub const MAX_MODULUS_COUNT: usize = 64;
 
 /// Denotes a modulus as Residue Number System (RNS).
 /// RNS decomposition is used to represent large modulus,
-/// where the large modulus is a product of basis modulus.
+/// where the large modulus is a product of basis moduli.
 ///
-/// The list of modulus should have no duplicates.
-/// The ordering is given by inclusion relation,
+/// The list of moduli should have no duplicates.
+/// The ordering of `RNSModulus` is given by inclusion relation,
 /// which corresponds to divisibility relation of modulus.
 ///
 /// Also serves as a shape for RNS modular numbers.
@@ -103,7 +103,7 @@ pub trait RNSShape: TensorShape {
 
 /// Denotes shapes which are pointwise.
 ///
-/// Note that product of rings like Z_Q \otimes R is not pointwise,
+/// Note that rings like Z_Q \otimes R is not pointwise when R is not pointwise,
 /// hence they need to be excluded.
 pub trait RNSPointwiseShape: RNSShape {}
 
@@ -116,6 +116,8 @@ impl RNSShape for RNSModulus {
         1
     }
 }
+
+impl RNSPointwiseShape for RNSModulus {}
 
 /// Generic handle for RNS tensors.
 pub struct RNSHandle<H> {
