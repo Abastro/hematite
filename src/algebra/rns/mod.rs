@@ -2,4 +2,4 @@
 pub mod rns;
 
 /// Operations for Residue Number System.
-pub mod operations;
+pub mod rns_ops;
