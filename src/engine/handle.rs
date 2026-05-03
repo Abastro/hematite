@@ -35,10 +35,10 @@ pub trait AddGroupHandle<G: ?Sized> {
     fn h_is_zero(&self, val: &G) -> bool;
     fn h_add(&self, lhs: &G, rhs: &G, out: &mut G);
     fn h_add_assign(&self, lhs: &mut G, rhs: &G);
-    fn h_neg(&self, arg: &G, out: &mut G);
-    fn h_neg_assign(&self, arg: &mut G);
     fn h_sub(&self, lhs: &G, rhs: &G, out: &mut G);
     fn h_sub_assign(&self, lhs: &mut G, rhs: &G);
+    fn h_neg(&self, arg: &G, out: &mut G);
+    fn h_neg_assign(&self, arg: &mut G);
 }
 
 /// Operations for additive groups - Copy version of AddGroupHandle.

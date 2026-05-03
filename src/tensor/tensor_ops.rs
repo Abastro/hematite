@@ -11,6 +11,12 @@ pub struct PointwiseHandle<H> {
     handle_scalar: H,
 }
 
+impl<H> PointwiseHandle<H> {
+    pub fn new(handle_scalar: H) -> Self {
+        PointwiseHandle { handle_scalar }
+    }
+}
+
 impl<Shape, T, H> AddGroupHandle<Tensor<Shape, T>> for PointwiseHandle<&H>
 where
     Shape: TensorShape + Eq + Debug,
