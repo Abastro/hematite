@@ -90,242 +90,35 @@ impl TensorShape for RNSModulus {
 
 /// Shape with RNS structure.
 ///
-/// Each prime (level) is given continguous memory.
-pub trait RNSShape: TensorShape {
-    fn rns_modulus(&self) -> RNSModulus;
-    fn len_per_prime(&self) -> usize;
-
-    /// Coordinates in RNS vs. index format
-    fn rns_coord(&self, level: usize, index: usize) -> usize {
-        level * self.len_per_prime() + index
-    }
-}
-
-/// Denotes shapes which are pointwise.
-///
-/// Note that rings like Z_Q \otimes R is not pointwise when R is not pointwise,
-/// hence they need to be excluded.
-pub trait RNSPointwiseShape: RNSShape {}
-
-impl RNSShape for RNSModulus {
-    fn rns_modulus(&self) -> RNSModulus {
-        *self
-    }
-
-    fn len_per_prime(&self) -> usize {
-        1
-    }
-}
-
-impl RNSPointwiseShape for RNSModulus {}
-
-/// Generic handle for RNS tensors.
-pub struct RNSHandle<H> {
-    /// Handle the modulus.
-    pub handle_mod: dyn Fn(u64) -> H,
-}
-
-impl<Shape, H> AddGroupHandle<Tensor<Shape, Mod64>> for RNSHandle<H>
-where
-    Shape: RNSShape + Eq + Debug,
-    H: AddGroupHandle<Mod64>,
-{
-    /// Hardcoded
-    fn h_set_zero(&self, val: &mut Tensor<Shape, Mod64>) {
-        for v in val.iter_mut() {
-            v.representative = 0
-        }
-    }
-
-    /// Hardcoded
-    fn h_is_zero(&self, val: &Tensor<Shape, Mod64>) -> bool {
-        val.iter().all(|v| v.representative == 0)
-    }
-
-    fn h_add(
-        &self,
-        lhs: &Tensor<Shape, Mod64>,
-        rhs: &Tensor<Shape, Mod64>,
-        out: &mut Tensor<Shape, Mod64>,
-    ) {
-        let shape = the_debug!(lhs.shape(), rhs.shape(), out.shape());
-        let rns = shape.rns_modulus();
-
-        for level in 0..rns.modulus_count {
-            let handle = (self.handle_mod)(rns[level]);
-            for index in 0..shape.len_per_prime() {
-                let coord = shape.rns_coord(level, index);
-
-                handle.h_add(
-                    &lhs.data()[coord],
-                    &rhs.data()[coord],
-                    &mut out.data_mut()[coord],
-                );
-            }
-        }
-    }
-
-    fn h_sub(
-        &self,
-        lhs: &Tensor<Shape, Mod64>,
-        rhs: &Tensor<Shape, Mod64>,
-        out: &mut Tensor<Shape, Mod64>,
-    ) {
-        let shape = the_debug!(lhs.shape(), rhs.shape(), out.shape());
-        let rns = shape.rns_modulus();
-
-        for level in 0..rns.modulus_count {
-            let handle = (self.handle_mod)(rns[level]);
-            for index in 0..shape.len_per_prime() {
-                let coord = shape.rns_coord(level, index);
-
-                handle.h_sub(
-                    &lhs.data()[coord],
-                    &rhs.data()[coord],
-                    &mut out.data_mut()[coord],
-                );
-            }
-        }
-    }
-
-    fn h_add_assign(&self, lhs: &mut Tensor<Shape, Mod64>, rhs: &Tensor<Shape, Mod64>) {
-        let shape = the_debug!(lhs.shape(), rhs.shape());
-        let rns = shape.rns_modulus();
-
-        for level in 0..rns.modulus_count {
-            let handle = (self.handle_mod)(rns[level]);
-            for index in 0..shape.len_per_prime() {
-                let coord = shape.rns_coord(level, index);
-
-                handle.h_add_assign(&mut lhs.data_mut()[coord], &rhs.data()[coord]);
-            }
-        }
-    }
-
-    fn h_sub_assign(&self, lhs: &mut Tensor<Shape, Mod64>, rhs: &Tensor<Shape, Mod64>) {
-        let shape = the_debug!(lhs.shape(), rhs.shape());
-        let rns = shape.rns_modulus();
-
-        for level in 0..rns.modulus_count {
-            let handle = (self.handle_mod)(rns[level]);
-            for index in 0..shape.len_per_prime() {
-                let coord = shape.rns_coord(level, index);
-
-                handle.h_sub_assign(&mut lhs.data_mut()[coord], &rhs.data()[coord]);
-            }
-        }
-    }
-
-    fn h_neg(&self, arg: &Tensor<Shape, Mod64>, out: &mut Tensor<Shape, Mod64>) {
-        let shape = the_debug!(arg.shape(), out.shape());
-        let rns = shape.rns_modulus();
-
-        for level in 0..rns.modulus_count {
-            let handle = (self.handle_mod)(rns[level]);
-            for index in 0..shape.len_per_prime() {
-                let coord = shape.rns_coord(level, index);
-
-                handle.h_neg(&arg.data()[coord], &mut out.data_mut()[coord]);
-            }
-        }
-    }
-
-    fn h_neg_assign(&self, arg: &mut Tensor<Shape, Mod64>) {
-        let shape = arg.shape();
-        let rns = shape.rns_modulus();
-
-        for level in 0..rns.modulus_count {
-            let handle = (self.handle_mod)(rns[level]);
-            for index in 0..shape.len_per_prime() {
-                let coord = shape.rns_coord(level, index);
-
-                handle.h_neg_assign(&mut arg.data_mut()[coord]);
-            }
-        }
-    }
-}
-
-impl<Shape, H> RingHandle<Tensor<Shape, Mod64>> for RNSHandle<H>
-where
-    Shape: RNSPointwiseShape + Eq + Debug,
-    H: RingHandle<Mod64>,
-{
-    /// Hardcoded
-    fn h_set_one(&self, val: &mut Tensor<Shape, Mod64>) {
-        for v in val.iter_mut() {
-            v.representative = 1;
-        }
-    }
-
-    fn h_mul(
-        &self,
-        lhs: &Tensor<Shape, Mod64>,
-        rhs: &Tensor<Shape, Mod64>,
-        out: &mut Tensor<Shape, Mod64>,
-    ) {
-        let shape = the_debug!(lhs.shape(), rhs.shape(), out.shape());
-        let rns = shape.rns_modulus();
-
-        for level in 0..rns.modulus_count {
-            let handle = (self.handle_mod)(rns[level]);
-            for index in 0..shape.len_per_prime() {
-                let coord = shape.rns_coord(level, index);
-
-                handle.h_mul(
-                    &lhs.data()[coord],
-                    &rhs.data()[coord],
-                    &mut out.data_mut()[coord],
-                );
-            }
-        }
-    }
-
-    fn h_mul_assign(&self, lhs: &mut Tensor<Shape, Mod64>, rhs: &Tensor<Shape, Mod64>) {
-        let shape = the_debug!(lhs.shape(), rhs.shape());
-        let rns = shape.rns_modulus();
-
-        for level in 0..rns.modulus_count {
-            let handle = (self.handle_mod)(rns[level]);
-            for index in 0..shape.len_per_prime() {
-                let coord = shape.rns_coord(level, index);
-
-                handle.h_mul_assign(&mut lhs.data_mut()[coord], &rhs.data()[coord]);
-            }
-        }
-    }
-}
-
-/// Shape of product of RNS modulus.
-///
-/// For compatibility with e.g. RNSCyclo,
-/// the coord order is level * length.
+/// Each prime (level) is given contiguous memory,
+/// so coordinate order is level * (shape coords).
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct RNSProduct {
-    pub modulus: RNSModulus,
-    pub length: usize,
+pub struct RNS<Shape> {
+    pub rns_modulus: RNSModulus,
+    pub per_level: Shape,
 }
 
-impl TensorShape for RNSProduct {
-    type Coord = (usize, usize);
+impl<Shape> RNS<Shape>
+where
+    Shape: TensorShape,
+{
+    pub fn rns_coord(&self, level: usize, index: usize) -> usize {
+        level * self.per_level.total_size() + index
+    }
+}
+
+impl<Shape> TensorShape for RNS<Shape>
+where
+    Shape: TensorShape,
+{
+    type Coord = (usize, Shape::Coord);
 
     fn coord_index(&self, coord: Self::Coord) -> usize {
-        let (level, idx) = coord;
-        level * self.length + idx
+        let (level, sub) = coord;
+        level * self.per_level.total_size() + self.per_level.coord_index(sub)
     }
 
     fn total_size(&self) -> usize {
-        self.modulus.total_size() * self.length
+        self.rns_modulus.total_size() * self.per_level.total_size()
     }
 }
-
-impl RNSShape for RNSProduct {
-    fn rns_modulus(&self) -> RNSModulus {
-        self.modulus
-    }
-
-    fn len_per_prime(&self) -> usize {
-        self.length
-    }
-}
-
-impl RNSPointwiseShape for RNSProduct {}
