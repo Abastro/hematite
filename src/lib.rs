@@ -17,13 +17,8 @@ pub mod scalar;
 /// Transformations like Number-Theoretic Transform or Discrete Fourier Transform.
 pub mod transform;
 
-/// Residue number system for representing large composite modulus.
-pub mod rns;
-
-/// Polynomial rings, especially cyclotomic rings.
-pub mod poly;
-
-pub mod core;
+/// Algebra for homomorphic encryption, specifically Cyclotomic rings and RNS.
+pub mod algebra;
 
 /// Encryption schemes.
 pub mod encryption;
