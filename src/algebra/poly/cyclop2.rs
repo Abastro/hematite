@@ -2,7 +2,6 @@ use crate::{
     algebra::poly::cyclotomic::Cyclo,
     engine::handle::{AddGroupHandle, RingHandle},
     tensor::{tensor::TensorShape, tensor_ops::PointwiseHandle},
-    the_debug,
     utils::math::powers,
 };
 
