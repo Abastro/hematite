@@ -1,60 +1,24 @@
 use crate::{
-    algebra::poly::cyclotomic::Cyclo,
     engine::handle::{AddGroupHandle, RingHandle},
-    tensor::{tensor::TensorShape, tensor_ops::PointwiseHandle},
+    tensor::tensor_ops::PointwiseHandle,
     utils::math::powers,
 };
 
-/// Denotes the standard power-of-two cyclotomic ring, `Z[X]/(X^N + 1)`.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct CycloP2 {
-    degree: usize,
-}
-
-impl CycloP2 {
-    pub fn new(degree: usize) -> Self {
-        assert!(powers::is_pow2(degree as u64));
-        CycloP2 { degree }
-    }
-}
-
-impl TensorShape for CycloP2 {
-    type Coord = usize;
-
-    fn coord_index(&self, coord: Self::Coord) -> usize {
-        coord
-    }
-
-    fn total_size(&self) -> usize {
-        self.degree
-    }
-}
-
-impl Cyclo for CycloP2 {
-    fn degree(&self) -> usize {
-        self.degree
-    }
-
-    fn order(&self) -> usize {
-        2 * self.degree
-    }
-}
-
 /// Handle for generic power-of-two cyclotomic operations.
-pub struct CycloP2Handle<H> {
+pub struct P2Handle<H> {
     handle_scalar: H,
 }
 
-impl<H> CycloP2Handle<H> {
+impl<H> P2Handle<H> {
     pub fn new(handle_scalar: H) -> Self {
-        CycloP2Handle { handle_scalar }
+        P2Handle { handle_scalar }
     }
 }
 
 // TODO Implement vectorization for Mod64
 
 /// Generic additive implementation
-impl<H, T> AddGroupHandle<[T]> for CycloP2Handle<&H>
+impl<H, T> AddGroupHandle<[T]> for P2Handle<&H>
 where
     H: AddGroupHandle<T>,
 {
@@ -91,7 +55,7 @@ where
     }
 }
 
-impl<H> CycloP2Handle<&H> {
+impl<H> P2Handle<&H> {
     /// Computes negacyclic convolution in Z[X]/(X^N + 1).
     pub fn compute_mul<T: Clone>(&self, lhs: &[T], rhs: &[T]) -> Vec<T>
     where
@@ -124,7 +88,7 @@ impl<H> CycloP2Handle<&H> {
 }
 
 /// Less efficient generic implementation of cyclotomic product
-impl<T: Clone, H> RingHandle<[T]> for CycloP2Handle<&H>
+impl<T: Clone, H> RingHandle<[T]> for P2Handle<&H>
 where
     H: RingHandle<T>,
 {
