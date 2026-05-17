@@ -72,3 +72,12 @@ impl<Shape: TensorShape, T> IndexMut<Shape::Coord> for Tensor<Shape, T> {
         &mut self.data[self.shape.coord_index(index)]
     }
 }
+
+/// A shaped handle, which is used to handle a slice with a shape.
+/// 
+/// Since slice [T] cannot be constructed in rust, we cannot have (Shape, [T]) for non-owned variant of tensor,
+/// so we embed the shape into the handle instead.
+pub struct Shaped<Shape, H> {
+    pub shape: Shape,
+    pub handle: H,
+}

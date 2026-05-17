@@ -1,8 +1,50 @@
-use crate::engine::handle::AddGroupHandle;
-use crate::engine::handle::RingHandle;
-use crate::tensor::tensor::Tensor;
-use crate::tensor::tensor::TensorShape;
+use crate::{
+    engine::handle::{AddGroupHandle, RingHandle},
+    tensor::tensor::{Shaped, Tensor, TensorShape},
+};
 use std::fmt::Debug;
+
+impl<Shape, T, H> AddGroupHandle<Tensor<Shape, T>> for H
+where
+    Shape: TensorShape + Eq + Debug,
+    for<'a> Shaped<Shape, &'a H>: AddGroupHandle<[T]>,
+{
+    fn h_set_zero(&self, val: &mut Tensor<Shape, T>) {
+        Shaped {
+            shape: val.shape(),
+            handle: self,
+        }
+        .h_set_zero(&mut val.data_mut()[..]);
+    }
+
+    fn h_is_zero(&self, val: &Tensor<Shape, T>) -> bool {
+        todo!()
+    }
+
+    fn h_add(&self, lhs: &Tensor<Shape, T>, rhs: &Tensor<Shape, T>, out: &mut Tensor<Shape, T>) {
+        todo!()
+    }
+
+    fn h_add_assign(&self, lhs: &mut Tensor<Shape, T>, rhs: &Tensor<Shape, T>) {
+        todo!()
+    }
+
+    fn h_sub(&self, lhs: &Tensor<Shape, T>, rhs: &Tensor<Shape, T>, out: &mut Tensor<Shape, T>) {
+        todo!()
+    }
+
+    fn h_sub_assign(&self, lhs: &mut Tensor<Shape, T>, rhs: &Tensor<Shape, T>) {
+        todo!()
+    }
+
+    fn h_neg(&self, arg: &Tensor<Shape, T>, out: &mut Tensor<Shape, T>) {
+        todo!()
+    }
+
+    fn h_neg_assign(&self, arg: &mut Tensor<Shape, T>) {
+        todo!()
+    }
+}
 
 /// Handle for tensors with pointwise operations.
 ///
@@ -17,102 +59,102 @@ impl<H> PointwiseHandle<H> {
     }
 }
 
-impl<Shape, T, H> AddGroupHandle<Tensor<Shape, T>> for PointwiseHandle<&H>
-where
-    Shape: TensorShape + Eq + Debug,
-    H: AddGroupHandle<T>,
-{
-    fn h_set_zero(&self, val: &mut Tensor<Shape, T>) {
-        for entry in val.iter_mut() {
-            self.handle_scalar.h_set_zero(entry);
-        }
-    }
+// impl<Shape, T, H> AddGroupHandle<Tensor<Shape, T>> for PointwiseHandle<&H>
+// where
+//     Shape: TensorShape + Eq + Debug,
+//     H: AddGroupHandle<T>,
+// {
+//     fn h_set_zero(&self, val: &mut Tensor<Shape, T>) {
+//         for entry in val.iter_mut() {
+//             self.handle_scalar.h_set_zero(entry);
+//         }
+//     }
 
-    fn h_is_zero(&self, val: &Tensor<Shape, T>) -> bool {
-        val.iter().all(|entry| self.handle_scalar.h_is_zero(entry))
-    }
+//     fn h_is_zero(&self, val: &Tensor<Shape, T>) -> bool {
+//         val.iter().all(|entry| self.handle_scalar.h_is_zero(entry))
+//     }
 
-    fn h_add(&self, lhs: &Tensor<Shape, T>, rhs: &Tensor<Shape, T>, out: &mut Tensor<Shape, T>) {
-        let shape = crate::the_debug!(lhs.shape(), rhs.shape(), out.shape());
+//     fn h_add(&self, lhs: &Tensor<Shape, T>, rhs: &Tensor<Shape, T>, out: &mut Tensor<Shape, T>) {
+//         let shape = crate::the_debug!(lhs.shape(), rhs.shape(), out.shape());
 
-        for idx in 0..shape.total_size() {
-            self.handle_scalar
-                .h_add(&lhs.data()[idx], &rhs.data()[idx], &mut out.data_mut()[idx]);
-        }
-    }
+//         for idx in 0..shape.total_size() {
+//             self.handle_scalar
+//                 .h_add(&lhs.data()[idx], &rhs.data()[idx], &mut out.data_mut()[idx]);
+//         }
+//     }
 
-    fn h_sub(&self, lhs: &Tensor<Shape, T>, rhs: &Tensor<Shape, T>, out: &mut Tensor<Shape, T>) {
-        let shape = crate::the_debug!(lhs.shape(), rhs.shape(), out.shape());
+//     fn h_sub(&self, lhs: &Tensor<Shape, T>, rhs: &Tensor<Shape, T>, out: &mut Tensor<Shape, T>) {
+//         let shape = crate::the_debug!(lhs.shape(), rhs.shape(), out.shape());
 
-        for idx in 0..shape.total_size() {
-            self.handle_scalar
-                .h_sub(&lhs.data()[idx], &rhs.data()[idx], &mut out.data_mut()[idx]);
-        }
-    }
+//         for idx in 0..shape.total_size() {
+//             self.handle_scalar
+//                 .h_sub(&lhs.data()[idx], &rhs.data()[idx], &mut out.data_mut()[idx]);
+//         }
+//     }
 
-    fn h_add_assign(&self, lhs: &mut Tensor<Shape, T>, rhs: &Tensor<Shape, T>) {
-        let shape = crate::the_debug!(lhs.shape(), rhs.shape());
+//     fn h_add_assign(&self, lhs: &mut Tensor<Shape, T>, rhs: &Tensor<Shape, T>) {
+//         let shape = crate::the_debug!(lhs.shape(), rhs.shape());
 
-        for idx in 0..shape.total_size() {
-            self.handle_scalar
-                .h_add_assign(&mut lhs.data_mut()[idx], &rhs.data()[idx]);
-        }
-    }
+//         for idx in 0..shape.total_size() {
+//             self.handle_scalar
+//                 .h_add_assign(&mut lhs.data_mut()[idx], &rhs.data()[idx]);
+//         }
+//     }
 
-    fn h_sub_assign(&self, lhs: &mut Tensor<Shape, T>, rhs: &Tensor<Shape, T>) {
-        let shape = crate::the_debug!(lhs.shape(), rhs.shape());
+//     fn h_sub_assign(&self, lhs: &mut Tensor<Shape, T>, rhs: &Tensor<Shape, T>) {
+//         let shape = crate::the_debug!(lhs.shape(), rhs.shape());
 
-        for idx in 0..shape.total_size() {
-            self.handle_scalar
-                .h_sub_assign(&mut lhs.data_mut()[idx], &rhs.data()[idx]);
-        }
-    }
+//         for idx in 0..shape.total_size() {
+//             self.handle_scalar
+//                 .h_sub_assign(&mut lhs.data_mut()[idx], &rhs.data()[idx]);
+//         }
+//     }
 
-    fn h_neg(&self, arg: &Tensor<Shape, T>, out: &mut Tensor<Shape, T>) {
-        let shape = crate::the_debug!(arg.shape(), out.shape());
+//     fn h_neg(&self, arg: &Tensor<Shape, T>, out: &mut Tensor<Shape, T>) {
+//         let shape = crate::the_debug!(arg.shape(), out.shape());
 
-        for idx in 0..shape.total_size() {
-            self.handle_scalar
-                .h_neg(&arg.data()[idx], &mut out.data_mut()[idx]);
-        }
-    }
+//         for idx in 0..shape.total_size() {
+//             self.handle_scalar
+//                 .h_neg(&arg.data()[idx], &mut out.data_mut()[idx]);
+//         }
+//     }
 
-    fn h_neg_assign(&self, arg: &mut Tensor<Shape, T>) {
-        for idx in 0..arg.shape().total_size() {
-            self.handle_scalar.h_neg_assign(&mut arg.data_mut()[idx]);
-        }
-    }
-}
+//     fn h_neg_assign(&self, arg: &mut Tensor<Shape, T>) {
+//         for idx in 0..arg.shape().total_size() {
+//             self.handle_scalar.h_neg_assign(&mut arg.data_mut()[idx]);
+//         }
+//     }
+// }
 
-impl<Shape, T, H> RingHandle<Tensor<Shape, T>> for PointwiseHandle<&H>
-where
-    Shape: TensorShape + Eq + Debug,
-    H: RingHandle<T>,
-{
-    fn h_set_one(&self, val: &mut Tensor<Shape, T>) {
-        for entry in val.iter_mut() {
-            self.handle_scalar.h_set_one(entry);
-        }
-    }
+// impl<Shape, T, H> RingHandle<Tensor<Shape, T>> for PointwiseHandle<&H>
+// where
+//     Shape: TensorShape + Eq + Debug,
+//     H: RingHandle<T>,
+// {
+//     fn h_set_one(&self, val: &mut Tensor<Shape, T>) {
+//         for entry in val.iter_mut() {
+//             self.handle_scalar.h_set_one(entry);
+//         }
+//     }
 
-    fn h_mul(&self, lhs: &Tensor<Shape, T>, rhs: &Tensor<Shape, T>, out: &mut Tensor<Shape, T>) {
-        let shape = crate::the_debug!(lhs.shape(), rhs.shape(), out.shape());
+//     fn h_mul(&self, lhs: &Tensor<Shape, T>, rhs: &Tensor<Shape, T>, out: &mut Tensor<Shape, T>) {
+//         let shape = crate::the_debug!(lhs.shape(), rhs.shape(), out.shape());
 
-        for idx in 0..shape.total_size() {
-            self.handle_scalar
-                .h_mul(&lhs.data()[idx], &rhs.data()[idx], &mut out.data_mut()[idx]);
-        }
-    }
+//         for idx in 0..shape.total_size() {
+//             self.handle_scalar
+//                 .h_mul(&lhs.data()[idx], &rhs.data()[idx], &mut out.data_mut()[idx]);
+//         }
+//     }
 
-    fn h_mul_assign(&self, lhs: &mut Tensor<Shape, T>, rhs: &Tensor<Shape, T>) {
-        let shape = crate::the_debug!(lhs.shape(), rhs.shape());
+//     fn h_mul_assign(&self, lhs: &mut Tensor<Shape, T>, rhs: &Tensor<Shape, T>) {
+//         let shape = crate::the_debug!(lhs.shape(), rhs.shape());
 
-        for idx in 0..shape.total_size() {
-            self.handle_scalar
-                .h_mul_assign(&mut lhs.data_mut()[idx], &rhs.data()[idx]);
-        }
-    }
-}
+//         for idx in 0..shape.total_size() {
+//             self.handle_scalar
+//                 .h_mul_assign(&mut lhs.data_mut()[idx], &rhs.data()[idx]);
+//         }
+//     }
+// }
 
 impl<T, H> AddGroupHandle<[T]> for PointwiseHandle<&H>
 where
